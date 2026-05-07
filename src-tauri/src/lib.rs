@@ -132,3 +132,41 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_get_models() {
+        
+        let result = get_models().await;
+        match result {
+            Ok(models) => println!("Got {} models", models.len()),
+            Err(e) => println!("Error: {}", e),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_generate() {
+        let req = GenerateRequest {
+            model: "llama3.2:3b".to_string(),
+            prompt: Some("hello".to_string()),
+            suffix: None,
+            images: None,
+            format: None,
+            system: None,
+            stream: false,
+            think: None,
+            raw: None,
+            keep_alive: None,
+            options: None,
+        };
+
+        let result = generate(req).await;
+        match result {
+            Ok(response) => println!("{}", response.response.as_deref().unwrap_or("<no response>")),
+            Err(e) => println!("Error: {}", e),
+        }
+    }
+}
