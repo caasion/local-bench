@@ -76,7 +76,7 @@ pub struct GenerateRequest {
     pub images: Option<Vec<String>>,
     pub format: Option<Value>,
     pub system: Option<String>,
-    #[serde(default = "default_stream")]
+    #[serde(default)]
     pub stream: bool,
     #[serde(default)]
     pub think: Option<ThinkingOption>,
@@ -85,8 +85,6 @@ pub struct GenerateRequest {
     pub keep_alive: Option<String>,
     pub options: Option<GenerateOptions>,
 }
-
-fn default_stream() -> bool { true }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
