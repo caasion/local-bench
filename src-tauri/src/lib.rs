@@ -101,7 +101,6 @@ pub struct GenerateOptions {
     pub extra: Option<Value>,
 }
 
-#[tauri::command]
 async fn generate(body: GenerateRequest) -> Result<GenerationResponse, String> {
     let client = reqwest::Client::new();
 
@@ -128,7 +127,7 @@ async fn generate(body: GenerateRequest) -> Result<GenerationResponse, String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_models, generate])
+        .invoke_handler(tauri::generate_handler![get_models])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
