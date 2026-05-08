@@ -220,4 +220,17 @@ mod tests {
             Err(e) => println!("Error: {}", e),
         }
     }
+
+    #[tokio::test]
+    async fn test_test_models() {
+        let model = "llama3.2:3b".to_string();
+
+        let result = test_model(model.clone()).await;
+        match result {
+            Ok(result) => println!("{}: {} {} {}", model, result.tokens_per_second, result.ttft_ns, result.total_time_ns),
+            Err(e) => println!("Error: {}", e)
+        }
+
+        
+    }
 }
