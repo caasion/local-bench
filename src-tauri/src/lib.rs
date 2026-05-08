@@ -5,7 +5,7 @@ use serde_json::Value;
 use metrics::get_gpu_vram;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
-use sysinfo::System;
+use sysinfo::{System, ProcessesToUpdate, ProcessRefreshKind};
 
 #[tauri::command]
 fn get_vram() -> Result<metrics::GpuMetrics, String> {
@@ -235,11 +235,17 @@ async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
     let cpu_peak_clone = Arc::clone(&cpu_peak);
     let poller = tokio::spawn(async move {
         let mut sys = System::new();
-        sys.refresh_cpu_usage(); 
+        // Initial refresh establishes a baseline so the first cpu_usage() delta is valid
+        sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing().with_cpu());
         loop {
             tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
-            sys.refresh_cpu_usage();
-            let cpu = sys.global_cpu_usage(); 
+            sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing().with_cpu());
+            // Sum CPU usage across all ollama processes (main + any runner subprocesses)
+            let cpu: f32 = sys.processes()
+                .values()
+                .filter(|p| p.name().to_string_lossy().to_lowercase().contains("ollama"))
+                .map(|p| p.cpu_usage())
+                .sum();
             cpu_peak_clone.fetch_max((cpu * 100.0) as u64, Ordering::Relaxed);
             if let Ok(metrics) = get_gpu_vram() {
                 vram_peak_clone.fetch_max(metrics.vram_used_mb, Ordering::Relaxed);
