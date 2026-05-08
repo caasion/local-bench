@@ -141,6 +141,7 @@ pub struct TestResult {
     pub total_tokens: i32,
 }
 
+#[tauri::command]
 async fn test_model(model: String) -> Result<TestResult, String> {
     let req = GenerateRequest {
         model: model.clone(),
@@ -188,7 +189,7 @@ async fn test_model(model: String) -> Result<TestResult, String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_models, get_vram])
+        .invoke_handler(tauri::generate_handler![get_models, get_vram, test_model])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
