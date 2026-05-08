@@ -123,6 +123,58 @@ async fn generate(body: GenerateRequest) -> Result<GenerationResponse, String> {
     Ok(result)
 }
 
+#[derive(Debug, Clone)]
+pub struct TestResult {
+    pub model: String,
+    pub tokens_per_second: f32,
+    pub ttft_ns: u32,
+    pub total_time_ns: u64,
+    pub total_tokens: i32,
+}
+
+async fn test_model(model: String) -> Result<TestResult, String> {
+    let req = GenerateRequest {
+        model: model.clone(),
+        prompt: Some("hello. how is the weather today? It seems quite bad in my eyes, but I'm not sure if it is actually that bad.".to_string()),
+        suffix: None,
+        images: None,
+        format: None,
+        system: None,
+        stream: false,
+        think: None,
+        raw: None,
+        keep_alive: None,
+        options: None,
+    };
+
+    let resp = generate(req).await?;
+
+    let GenerationResponse {
+        total_duration,
+        load_duration,
+        prompt_eval_duration,
+        eval_count,
+        eval_duration,
+        ..
+    } = resp;
+
+    let total_duration = total_duration.unwrap_or(0);
+    let load_duration = load_duration.unwrap_or(0);
+    let prompt_eval_duration = prompt_eval_duration.unwrap_or(0);
+    let eval_count = eval_count.unwrap_or(0) as i32;
+    let eval_duration = eval_duration.unwrap_or(1); // avoid div by zero
+
+    let result: TestResult = TestResult {
+        model,
+        tokens_per_second: (eval_count as f32) / ((eval_duration as f32 / 10e6) as f32),
+        ttft_ns: (load_duration + prompt_eval_duration) as u32,
+        total_time_ns: total_duration,
+        total_tokens: eval_count,
+    };
+
+    Ok(result)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
