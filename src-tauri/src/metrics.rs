@@ -1,7 +1,8 @@
 use nvml_wrapper::Nvml;
 use std::error::Error;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GpuMetrics {
     pub vram_used_mb: u64,
     pub vram_total_mb: u64,

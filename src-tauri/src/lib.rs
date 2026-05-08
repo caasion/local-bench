@@ -132,7 +132,7 @@ async fn generate(body: GenerateRequest) -> Result<GenerationResponse, String> {
     Ok(result)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestResult {
     pub model: String,
     pub tokens_per_second: f32,
