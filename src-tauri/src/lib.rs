@@ -133,6 +133,13 @@ async fn generate(body: GenerateRequest) -> Result<GenerationResponse, String> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TestInput {
+    pub model: String,
+    pub prompts: Vec<String>,
+    pub times: i16,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestResult {
     pub model: String,
     pub tokens_per_second: f32,
@@ -142,44 +149,64 @@ pub struct TestResult {
 }
 
 #[tauri::command]
-async fn test_model(model: String) -> Result<TestResult, String> {
-    let req = GenerateRequest {
-        model: model.clone(),
-        prompt: Some("hello. how is the weather today? It seems quite bad in my eyes, but I'm not sure if it is actually that bad.".to_string()),
-        suffix: None,
-        images: None,
-        format: None,
-        system: None,
-        stream: false,
-        think: None,
-        raw: None,
-        keep_alive: None,
-        options: None,
+async fn test_model(input: TestInput) -> Result<TestResult, String> {
+    let TestInput { model, prompts, times } = input;
+
+    // Accumulate metrics over all prompts and iterations
+    let mut total_duration_sum: u64 = 0;
+    let mut load_duration_sum: u64 = 0;
+    let mut prompt_eval_duration_sum: u64 = 0;
+    let mut eval_count_sum: u64 = 0;
+    let mut eval_duration_sum: u64 = 0;
+
+    for prompt in &prompts {
+        for _ in 0..(times as i32) {
+            let req = GenerateRequest {
+                model: model.clone(),
+                prompt: Some(prompt.clone()),
+                suffix: None,
+                images: None,
+                format: None,
+                system: None,
+                stream: false,
+                think: None,
+                raw: None,
+                keep_alive: None,
+                options: None,
+            };
+
+            let resp = generate(req).await?;
+
+            let GenerationResponse {
+                total_duration,
+                load_duration,
+                prompt_eval_duration,
+                eval_count,
+                eval_duration,
+                ..
+            } = resp;
+
+            total_duration_sum += total_duration.unwrap_or(0);
+            load_duration_sum += load_duration.unwrap_or(0);
+            prompt_eval_duration_sum += prompt_eval_duration.unwrap_or(0);
+            eval_count_sum += eval_count.unwrap_or(0) as u64;
+            eval_duration_sum += eval_duration.unwrap_or(1);
+        }
+    }
+
+    // Compute aggregated result (preserve original tokens/sec formula)
+    let tokens_per_second = if eval_duration_sum == 0 {
+        0.0
+    } else {
+        (eval_count_sum as f32) / ((eval_duration_sum as f32 / 10e6) as f32)
     };
 
-    let resp = generate(req).await?;
-
-    let GenerationResponse {
-        total_duration,
-        load_duration,
-        prompt_eval_duration,
-        eval_count,
-        eval_duration,
-        ..
-    } = resp;
-
-    let total_duration = total_duration.unwrap_or(0);
-    let load_duration = load_duration.unwrap_or(0);
-    let prompt_eval_duration = prompt_eval_duration.unwrap_or(0);
-    let eval_count = eval_count.unwrap_or(0) as i32;
-    let eval_duration = eval_duration.unwrap_or(1); // avoid div by zero
-
-    let result: TestResult = TestResult {
+    let result = TestResult {
         model,
-        tokens_per_second: (eval_count as f32) / ((eval_duration as f32 / 10e6) as f32),
-        ttft_ns: (load_duration + prompt_eval_duration) as u32,
-        total_time_ns: total_duration,
-        total_tokens: eval_count,
+        tokens_per_second,
+        ttft_ns: (load_duration_sum + prompt_eval_duration_sum) as u32,
+        total_time_ns: total_duration_sum,
+        total_tokens: eval_count_sum as i32,
     };
 
     Ok(result)
@@ -234,8 +261,16 @@ mod tests {
     #[tokio::test]
     async fn test_test_models() {
         let model = "llama3.2:3b".to_string();
+        let prompts: Vec<String> = vec!["Hello. How are you?".to_string(), "Generate the fibonnaci sequence for me.".to_string()];
+        let times: i16 = 5;
 
-        let result = test_model(model.clone()).await;
+        let input = TestInput {
+            model: model.clone(),
+            prompts,
+            times,
+        };
+
+        let result = test_model(input).await;
         match result {
             Ok(result) => println!("{}: {} {} {}", model, result.tokens_per_second, result.ttft_ns, result.total_time_ns),
             Err(e) => println!("Error: {}", e)
