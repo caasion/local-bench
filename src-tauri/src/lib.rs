@@ -143,6 +143,18 @@ pub struct TestInput {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PromptResult {
+    pub prompt: String,
+    pub tokens_per_second_mean: f64,
+    pub tokens_per_second_std_dev: f64,
+    pub ttft_ns_mean: f64,
+    pub ttft_ns_std_dev: f64,
+    pub total_time_ns_mean: f64,
+    pub total_time_ns_std_dev: f64,
+    pub total_tokens: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TestResult {
     pub model: String,
     pub tokens_per_second: f32,
@@ -150,13 +162,14 @@ pub struct TestResult {
     pub total_time_ns: u64,
     pub total_tokens: i32,
     pub vram_peak_mb: u64,
+    pub cpu_peak_percent: f32,
     pub tokens_per_second_mean: f64,
     pub tokens_per_second_std_dev: f64,
     pub ttft_ns_mean: f64,
     pub ttft_ns_std_dev: f64,
     pub total_time_ns_mean: f64,
     pub total_time_ns_std_dev: f64,
-    pub cpu_peak_percent: f32,
+    pub per_prompt: Vec<PromptResult>,
 }
 
 fn calc_mean(values: &[f64]) -> f64 {
@@ -196,17 +209,25 @@ async fn test_model(input: TestInput) -> Result<TestResult, String> {
     });
 
     // Accumulate metrics over all prompts and iterations
-    let mut total_duration_sum: u64 = 0;
     let mut load_duration_sum: u64 = 0;
     let mut prompt_eval_duration_sum: u64 = 0;
     let mut eval_count_sum: u64 = 0;
     let mut eval_duration_sum: u64 = 0;
+    let mut total_duration_sum: u64 = 0;
 
+    // Global samples across all prompts (for aggregate stats)
     let mut tps_samples: Vec<f64> = Vec::new();
     let mut ttft_samples: Vec<f64> = Vec::new();
     let mut total_time_samples: Vec<f64> = Vec::new();
 
+    let mut per_prompt: Vec<PromptResult> = Vec::new();
+
     for prompt in &prompts {
+        let mut p_tps: Vec<f64> = Vec::new();
+        let mut p_ttft: Vec<f64> = Vec::new();
+        let mut p_total_time: Vec<f64> = Vec::new();
+        let mut p_tokens: u64 = 0;
+
         for _ in 0..(times as i32) {
             let req = GenerateRequest {
                 model: model.clone(),
@@ -244,11 +265,31 @@ async fn test_model(input: TestInput) -> Result<TestResult, String> {
             prompt_eval_duration_sum += ped;
             eval_count_sum += ec;
             eval_duration_sum += ed;
+            p_tokens += ec;
 
-            tps_samples.push(if ed > 0 { (ec as f64) / (ed as f64 / 10e6) } else { 0.0 });
-            ttft_samples.push((ld + ped) as f64);
-            total_time_samples.push(td as f64);
+            let tps = if ed > 0 { (ec as f64) / (ed as f64 / 10e6) } else { 0.0 };
+            let ttft = (ld + ped) as f64;
+            let total_time = td as f64;
+
+            p_tps.push(tps);
+            p_ttft.push(ttft);
+            p_total_time.push(total_time);
+
+            tps_samples.push(tps);
+            ttft_samples.push(ttft);
+            total_time_samples.push(total_time);
         }
+
+        per_prompt.push(PromptResult {
+            prompt: prompt.clone(),
+            tokens_per_second_mean: calc_mean(&p_tps),
+            tokens_per_second_std_dev: calc_std_dev(&p_tps),
+            ttft_ns_mean: calc_mean(&p_ttft),
+            ttft_ns_std_dev: calc_std_dev(&p_ttft),
+            total_time_ns_mean: calc_mean(&p_total_time),
+            total_time_ns_std_dev: calc_std_dev(&p_total_time),
+            total_tokens: p_tokens,
+        });
     }
 
     poller.abort();
@@ -264,7 +305,6 @@ async fn test_model(input: TestInput) -> Result<TestResult, String> {
         model,
         tokens_per_second,
         ttft_ns: (load_duration_sum + prompt_eval_duration_sum) as u32,
-        load_duration_ns: load_duration,
         total_time_ns: total_duration_sum,
         total_tokens: eval_count_sum as i32,
         vram_peak_mb: vram_peak_mb.load(Ordering::Relaxed),
@@ -275,6 +315,7 @@ async fn test_model(input: TestInput) -> Result<TestResult, String> {
         ttft_ns_std_dev: calc_std_dev(&ttft_samples),
         total_time_ns_mean: calc_mean(&total_time_samples),
         total_time_ns_std_dev: calc_std_dev(&total_time_samples),
+        per_prompt,
     };
 
     Ok(result)
