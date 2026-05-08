@@ -17,9 +17,7 @@ interface TestResult {
 }
 
 interface GpuMetrics {
-  vram_used: number;
-  vram_total: number;
-  utilization: number;
+  vram_peak_mb: number;
 }
 
 const DEFAULT_PROMPT = "hello. how is the weather today? It seems quite bad in my eyes, but I'm not sure if it is actually that bad.";
@@ -30,7 +28,6 @@ function App() {
   const [prompt, setPrompt] = useState<string>(DEFAULT_PROMPT);
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState<TestResult | null>(null);
-  const [vramPeak, setVramPeak] = useState<number | null>(null);
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
@@ -58,40 +55,13 @@ function App() {
     setIsRunning(true);
     setError("");
     setResult(null);
-    setVramPeak(null);
 
     try {
-      // Get initial VRAM
-      const initialVram = await invoke<GpuMetrics>("get_vram");
-      let peakVram = initialVram.vram_used;
-
-      // Start monitoring VRAM in background
-      const vramInterval = setInterval(async () => {
-        try {
-          const metrics = await invoke<GpuMetrics>("get_vram");
-          if (metrics.vram_used > peakVram) {
-            peakVram = metrics.vram_used;
-          }
-        } catch (err) {
-          console.error("Failed to get VRAM metrics:", err);
-        }
-      }, 100);
-
-      // Run test
       const testResult = await invoke<TestResult>("test_model", {
-        model: selectedModel,
+        input: { model: selectedModel, prompts: [prompt], times: 1 },
       });
 
-      clearInterval(vramInterval);
-
-      // Get final VRAM reading
-      const finalVram = await invoke<GpuMetrics>("get_vram");
-      if (finalVram.vram_used > peakVram) {
-        peakVram = finalVram.vram_used;
-      }
-
       setResult(testResult);
-      setVramPeak(peakVram);
     } catch (err) {
       setError(`Benchmark failed: ${err}`);
     } finally {
@@ -166,25 +136,32 @@ function App() {
         <div className="results">
           <h2>Results for {result.model}</h2>
           <div className="result-grid">
-            <div className="result-item">
+            <div
+              className="result-item"
+              title={`Mean: ${formatTime(result.ttft_ns_mean)}  ±  ${formatTime(result.ttft_ns_std_dev)} std dev`}
+            >
               <span className="label">TTFT:</span>
               <span className="value">{formatTime(result.ttft_ns)}</span>
             </div>
-            <div className="result-item">
+            <div
+              className="result-item"
+              title={`Mean: ${result.tokens_per_second_mean.toFixed(2)} tok/s  ±  ${result.tokens_per_second_std_dev.toFixed(2)} tok/s std dev`}
+            >
               <span className="label">Throughput:</span>
               <span className="value">{result.tokens_per_second.toFixed(2)} tok/s</span>
             </div>
-            {vramPeak !== null && (
-              <div className="result-item">
-                <span className="label">VRAM Peak:</span>
-                <span className="value">{formatBytes(vramPeak)}</span>
-              </div>
-            )}
+            <div className="result-item">
+              <span className="label">VRAM Peak:</span>
+              <span className="value">{result.vram_peak_mb} MB</span>
+            </div>
             <div className="result-item">
               <span className="label">Total Tokens:</span>
               <span className="value">{result.total_tokens}</span>
             </div>
-            <div className="result-item">
+            <div
+              className="result-item"
+              title={`Mean: ${formatTime(result.total_time_ns_mean)}  ±  ${formatTime(result.total_time_ns_std_dev)} std dev`}
+            >
               <span className="label">Total Time:</span>
               <span className="value">{formatTime(result.total_time_ns)}</span>
             </div>

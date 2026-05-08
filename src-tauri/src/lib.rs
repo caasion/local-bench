@@ -3,6 +3,8 @@ mod metrics;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use metrics::get_gpu_vram;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 #[tauri::command]
 fn get_vram() -> Result<metrics::GpuMetrics, String> {
@@ -146,11 +148,26 @@ pub struct TestResult {
     pub ttft_ns: u32,
     pub total_time_ns: u64,
     pub total_tokens: i32,
+    pub vram_peak_mb: u64,
 }
 
 #[tauri::command]
 async fn test_model(input: TestInput) -> Result<TestResult, String> {
     let TestInput { model, prompts, times } = input;
+
+    // Start VRAM monitoring in background
+    let vram_peak_mb = Arc::new(AtomicU64::new(
+        get_gpu_vram().map(|m| m.vram_used_mb).unwrap_or(0),
+    ));
+    let vram_peak_clone = Arc::clone(&vram_peak_mb);
+    let poller = tokio::spawn(async move {
+        loop {
+            tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+            if let Ok(metrics) = get_gpu_vram() {
+                vram_peak_clone.fetch_max(metrics.vram_used_mb, Ordering::Relaxed);
+            }
+        }
+    });
 
     // Accumulate metrics over all prompts and iterations
     let mut total_duration_sum: u64 = 0;
@@ -194,6 +211,8 @@ async fn test_model(input: TestInput) -> Result<TestResult, String> {
         }
     }
 
+    poller.abort();
+
     // Compute aggregated result (preserve original tokens/sec formula)
     let tokens_per_second = if eval_duration_sum == 0 {
         0.0
@@ -207,6 +226,7 @@ async fn test_model(input: TestInput) -> Result<TestResult, String> {
         ttft_ns: (load_duration_sum + prompt_eval_duration_sum) as u32,
         total_time_ns: total_duration_sum,
         total_tokens: eval_count_sum as i32,
+        vram_peak_mb: vram_peak_mb.load(Ordering::Relaxed),
     };
 
     Ok(result)
