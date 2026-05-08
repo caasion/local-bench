@@ -149,6 +149,24 @@ pub struct TestResult {
     pub total_time_ns: u64,
     pub total_tokens: i32,
     pub vram_peak_mb: u64,
+    pub tokens_per_second_mean: f64,
+    pub tokens_per_second_std_dev: f64,
+    pub ttft_ns_mean: f64,
+    pub ttft_ns_std_dev: f64,
+    pub total_time_ns_mean: f64,
+    pub total_time_ns_std_dev: f64,
+}
+
+fn calc_mean(values: &[f64]) -> f64 {
+    if values.is_empty() { return 0.0; }
+    values.iter().sum::<f64>() / values.len() as f64
+}
+
+fn calc_std_dev(values: &[f64]) -> f64 {
+    if values.len() < 2 { return 0.0; }
+    let m = calc_mean(values);
+    let variance = values.iter().map(|v| (v - m).powi(2)).sum::<f64>() / (values.len() - 1) as f64;
+    variance.sqrt()
 }
 
 #[tauri::command]
@@ -175,6 +193,10 @@ async fn test_model(input: TestInput) -> Result<TestResult, String> {
     let mut prompt_eval_duration_sum: u64 = 0;
     let mut eval_count_sum: u64 = 0;
     let mut eval_duration_sum: u64 = 0;
+
+    let mut tps_samples: Vec<f64> = Vec::new();
+    let mut ttft_samples: Vec<f64> = Vec::new();
+    let mut total_time_samples: Vec<f64> = Vec::new();
 
     for prompt in &prompts {
         for _ in 0..(times as i32) {
@@ -203,11 +225,21 @@ async fn test_model(input: TestInput) -> Result<TestResult, String> {
                 ..
             } = resp;
 
-            total_duration_sum += total_duration.unwrap_or(0);
-            load_duration_sum += load_duration.unwrap_or(0);
-            prompt_eval_duration_sum += prompt_eval_duration.unwrap_or(0);
-            eval_count_sum += eval_count.unwrap_or(0) as u64;
-            eval_duration_sum += eval_duration.unwrap_or(1);
+            let td = total_duration.unwrap_or(0);
+            let ld = load_duration.unwrap_or(0);
+            let ped = prompt_eval_duration.unwrap_or(0);
+            let ec = eval_count.unwrap_or(0);
+            let ed = eval_duration.unwrap_or(1);
+
+            total_duration_sum += td;
+            load_duration_sum += ld;
+            prompt_eval_duration_sum += ped;
+            eval_count_sum += ec;
+            eval_duration_sum += ed;
+
+            tps_samples.push(if ed > 0 { (ec as f64) / (ed as f64 / 10e6) } else { 0.0 });
+            ttft_samples.push((ld + ped) as f64);
+            total_time_samples.push(td as f64);
         }
     }
 
@@ -227,6 +259,12 @@ async fn test_model(input: TestInput) -> Result<TestResult, String> {
         total_time_ns: total_duration_sum,
         total_tokens: eval_count_sum as i32,
         vram_peak_mb: vram_peak_mb.load(Ordering::Relaxed),
+        tokens_per_second_mean: calc_mean(&tps_samples),
+        tokens_per_second_std_dev: calc_std_dev(&tps_samples),
+        ttft_ns_mean: calc_mean(&ttft_samples),
+        ttft_ns_std_dev: calc_std_dev(&ttft_samples),
+        total_time_ns_mean: calc_mean(&total_time_samples),
+        total_time_ns_std_dev: calc_std_dev(&total_time_samples),
     };
 
     Ok(result)

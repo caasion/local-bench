@@ -14,10 +14,13 @@ interface TestResult {
   ttft_ns: number;
   total_time_ns: number;
   total_tokens: number;
-}
-
-interface GpuMetrics {
   vram_peak_mb: number;
+  tokens_per_second_mean: number;
+  tokens_per_second_std_dev: number;
+  ttft_ns_mean: number;
+  ttft_ns_std_dev: number;
+  total_time_ns_mean: number;
+  total_time_ns_std_dev: number;
 }
 
 const DEFAULT_PROMPT = "hello. how is the weather today? It seems quite bad in my eyes, but I'm not sure if it is actually that bad.";
