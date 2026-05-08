@@ -5,6 +5,7 @@ use serde_json::Value;
 use metrics::get_gpu_vram;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
+use sysinfo::System;
 
 #[tauri::command]
 fn get_vram() -> Result<metrics::GpuMetrics, String> {
@@ -155,6 +156,7 @@ pub struct TestResult {
     pub ttft_ns_std_dev: f64,
     pub total_time_ns_mean: f64,
     pub total_time_ns_std_dev: f64,
+    pub cpu_peak_percent: f32,
 }
 
 fn calc_mean(values: &[f64]) -> f64 {
@@ -173,14 +175,20 @@ fn calc_std_dev(values: &[f64]) -> f64 {
 async fn test_model(input: TestInput) -> Result<TestResult, String> {
     let TestInput { model, prompts, times } = input;
 
-    // Start VRAM monitoring in background
     let vram_peak_mb = Arc::new(AtomicU64::new(
         get_gpu_vram().map(|m| m.vram_used_mb).unwrap_or(0),
     ));
+    let cpu_peak = Arc::new(AtomicU64::new(0));
     let vram_peak_clone = Arc::clone(&vram_peak_mb);
+    let cpu_peak_clone = Arc::clone(&cpu_peak);
     let poller = tokio::spawn(async move {
+        let mut sys = System::new();
+        sys.refresh_cpu_usage(); 
         loop {
-            tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+            tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+            sys.refresh_cpu_usage();
+            let cpu = sys.global_cpu_usage(); 
+            cpu_peak_clone.fetch_max((cpu * 100.0) as u64, Ordering::Relaxed);
             if let Ok(metrics) = get_gpu_vram() {
                 vram_peak_clone.fetch_max(metrics.vram_used_mb, Ordering::Relaxed);
             }
@@ -256,9 +264,11 @@ async fn test_model(input: TestInput) -> Result<TestResult, String> {
         model,
         tokens_per_second,
         ttft_ns: (load_duration_sum + prompt_eval_duration_sum) as u32,
+        load_duration_ns: load_duration,
         total_time_ns: total_duration_sum,
         total_tokens: eval_count_sum as i32,
         vram_peak_mb: vram_peak_mb.load(Ordering::Relaxed),
+        cpu_peak_percent: cpu_peak.load(Ordering::Relaxed) as f32 / 100.0,
         tokens_per_second_mean: calc_mean(&tps_samples),
         tokens_per_second_std_dev: calc_std_dev(&tps_samples),
         ttft_ns_mean: calc_mean(&ttft_samples),
