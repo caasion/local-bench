@@ -136,7 +136,7 @@ async fn generate(body: GenerateRequest) -> Result<GenerationResponse, String> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TestInput {
+pub struct BenchmarkInput {
     pub model: String,
     pub prompts: Vec<String>,
     pub times: i16,
@@ -155,7 +155,7 @@ pub struct PromptResult {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TestResult {
+pub struct BenchmarkResult {
     pub model: String,
     pub tokens_per_second: f32,
     pub ttft_ns: u32,
@@ -185,8 +185,8 @@ fn calc_std_dev(values: &[f64]) -> f64 {
 }
 
 #[tauri::command]
-async fn test_model(input: TestInput) -> Result<TestResult, String> {
-    let TestInput { model, prompts, times } = input;
+async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
+    let BenchmarkInput { model, prompts, times } = input;
 
     let vram_peak_mb = Arc::new(AtomicU64::new(
         get_gpu_vram().map(|m| m.vram_used_mb).unwrap_or(0),
@@ -301,7 +301,7 @@ async fn test_model(input: TestInput) -> Result<TestResult, String> {
         (eval_count_sum as f32) / ((eval_duration_sum as f32 / 10e6) as f32)
     };
 
-    let result = TestResult {
+    let result = BenchmarkResult {
         model,
         tokens_per_second,
         ttft_ns: (load_duration_sum + prompt_eval_duration_sum) as u32,
@@ -325,7 +325,7 @@ async fn test_model(input: TestInput) -> Result<TestResult, String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_models, get_vram, test_model])
+        .invoke_handler(tauri::generate_handler![get_models, get_vram, benchmark])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -368,18 +368,18 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_test_models() {
+    async fn test_benchmark() {
         let model = "llama3.2:3b".to_string();
         let prompts: Vec<String> = vec!["Hello. How are you?".to_string(), "Generate the fibonnaci sequence for me.".to_string()];
         let times: i16 = 5;
 
-        let input = TestInput {
+        let input = BenchmarkInput {
             model: model.clone(),
             prompts,
             times,
         };
 
-        let result = test_model(input).await;
+        let result = benchmark(input).await;
         match result {
             Ok(result) => println!("{}: {} {} {}", model, result.tokens_per_second, result.ttft_ns, result.total_time_ns),
             Err(e) => println!("Error: {}", e)
