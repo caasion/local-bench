@@ -1,5 +1,14 @@
+mod metrics;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use metrics::get_gpu_vram;
+
+#[tauri::command]
+fn get_vram() -> Result<metrics::GpuMetrics, String> {
+    get_gpu_vram()
+        .map_err(|e| format!("GPU metrics error: {}", e))
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TagsResponse {
@@ -179,7 +188,7 @@ async fn test_model(model: String) -> Result<TestResult, String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_models])
+        .invoke_handler(tauri::generate_handler![get_models, get_vram])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
