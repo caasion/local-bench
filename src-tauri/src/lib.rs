@@ -63,6 +63,45 @@ async fn get_models() -> Result<Vec<Model>, String> {
     Ok(tags.models)
 }
 
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PsResponse {
+    pub models: Vec<RunningModel>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RunningModel {
+    pub name: String,
+    pub model: String,
+    pub size: u64,
+    pub digest: String,
+    pub details: ModelDetails,
+    pub expires_at: String,
+    pub size_vram: u64,
+    pub context_length: u64,
+}
+
+async fn get_all_running_models() -> Result<PsResponse, String> {
+    let client = reqwest::Client::new();
+
+    let resp = client
+        .get("http://localhost:11434/api/ps")
+        .send()
+        .await
+        .map_err(|e| format!("Request error: {}", e))?;
+
+    if !resp.status().is_success() {
+        return Err(format!("HTTP error: {}", resp.status()));
+    }
+
+    let result = resp
+        .json()
+        .await
+        .map_err(|e| format!("Failed to deserialize response: {}", e))?;
+
+    Ok(result)
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenerationResponse {
     pub model: String,
