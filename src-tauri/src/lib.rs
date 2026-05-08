@@ -423,7 +423,14 @@ mod tests {
             Ok(result) => println!("{}: {} {} {}", model, result.tokens_per_second, result.ttft_ns, result.total_time_ns),
             Err(e) => println!("Error: {}", e)
         }
+    }
 
-        
+    #[tokio::test]
+    async fn test_get_all_running_models() {
+        let result = get_all_running_models().await;
+        match result {
+            Ok(result) => println!("{:#?}", result),
+            Err(e) => println!("Error: {}", e)
+        }
     }
 }
