@@ -21,6 +21,7 @@ interface PromptResult {
 
 interface BenchmarkResult {
   model: string;
+  likely_ram_spillover: boolean;
   tokens_per_second: number;
   ttft_ns: number;
   total_time_ns: number;
@@ -211,6 +212,12 @@ function App() {
             <div className="result-item">
               <span className="label">CPU Peak:</span>
               <span className="value">{result.cpu_peak_percent.toFixed(1)}%</span>
+            </div>
+            <div className="result-item">
+              <span className="label">RAM Spillover:</span>
+              <span className={`value ${result.likely_ram_spillover ? "spillover-warning" : "spillover-ok"}`}>
+                {result.likely_ram_spillover ? "Likely" : "Unlikely"}
+              </span>
             </div>
           </div>
 

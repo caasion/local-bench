@@ -245,6 +245,16 @@ button {
   color: #888;
 }
 
+.spillover-warning {
+  color: #e74c3c;
+  font-weight: 700;
+}
+
+.spillover-ok {
+  color: #27ae60;
+  font-weight: 700;
+}
+
 .prompt-row {
   display: flex;
   gap: 0.5rem;
