@@ -174,6 +174,18 @@ async fn generate(body: GenerateRequest) -> Result<GenerationResponse, String> {
     Ok(result)
 }
 
+async fn check_ram_spillover(model: &String) -> Result<bool, String> {
+    let current_model = get_all_running_models().await?
+        .models
+        .into_iter()
+        .find(|m| m.name == *model)
+        .ok_or_else(|| format!("Model '{}' not running", model))?;
+
+    let likely_ram_spillover = current_model.size - (current_model.size as f64 * 0.05) as u64 > current_model.size_vram;
+
+    Ok(likely_ram_spillover)
+}    
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BenchmarkInput {
     pub model: String,
@@ -253,16 +265,6 @@ async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
             }
         }
     });
-
-    // Check for ram spillover 
-    let current_running_models: Vec<RunningModel> = get_all_running_models().await?
-        .models
-        // .into_iter().filter(|m| m.name == model).collect()
-        ;
-
-    let current_model = &current_running_models[0];
-
-    let likely_ram_spillover = current_model.size - (current_model.size as f64 * 0.05) as u64 > current_model.size_vram;
 
 
     // Accumulate metrics over all prompts and iterations
