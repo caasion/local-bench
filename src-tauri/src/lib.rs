@@ -148,6 +148,7 @@ pub enum ThinkingOption {
 pub struct GenerateOptions {
     pub logprobs: Option<bool>,
     pub top_logprobs: Option<u32>,
+    pub num_ctx: Option<u32>,
     #[serde(flatten)]
     pub extra: Option<Value>,
 }
@@ -189,6 +190,7 @@ async fn check_ram_spillover(model: &String) -> Result<bool, String> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BenchmarkInput {
     pub model: String,
+    pub num_ctx: u32,
     pub prompts: Vec<String>,
     pub times: i16,
 }
@@ -238,7 +240,7 @@ fn calc_std_dev(values: &[f64]) -> f64 {
 
 #[tauri::command]
 async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
-    let BenchmarkInput { model, prompts, times } = input;
+    let BenchmarkInput { model, num_ctx, prompts, times } = input;
 
     let vram_peak_mb = Arc::new(AtomicU64::new(
         get_gpu_vram().map(|m| m.vram_used_mb).unwrap_or(0),
@@ -281,6 +283,13 @@ async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
 
     let mut per_prompt: Vec<PromptResult> = Vec::new();
 
+    let gen_options = Some(GenerateOptions {
+        logprobs: None,
+        top_logprobs: None,
+        num_ctx: Some(num_ctx),
+        extra: None,
+    });
+
     // Pull first generation out so the model is loaded before we check spillover
     let first_req = GenerateRequest {
         model: model.clone(),
@@ -293,7 +302,7 @@ async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
         think: None,
         raw: None,
         keep_alive: None,
-        options: None,
+        options: gen_options.clone(),
     };
     let mut prefetched = Some(generate(first_req).await?);
     let likely_ram_spillover = check_ram_spillover(&model).await.unwrap_or(false);
@@ -319,7 +328,7 @@ async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
                     think: None,
                     raw: None,
                     keep_alive: None,
-                    options: None,
+                    options: gen_options.clone(),
                 };
                 generate(req).await?
             };
