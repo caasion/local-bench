@@ -281,28 +281,48 @@ async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
 
     let mut per_prompt: Vec<PromptResult> = Vec::new();
 
-    for prompt in &prompts {
+    // Pull first generation out so the model is loaded before we check spillover
+    let first_req = GenerateRequest {
+        model: model.clone(),
+        prompt: Some(prompts[0].clone()),
+        suffix: None,
+        images: None,
+        format: None,
+        system: None,
+        stream: false,
+        think: None,
+        raw: None,
+        keep_alive: None,
+        options: None,
+    };
+    let mut prefetched = Some(generate(first_req).await?);
+    let likely_ram_spillover = check_ram_spillover(&model).await.unwrap_or(false);
+
+    for (pi, prompt) in prompts.iter().enumerate() {
         let mut p_tps: Vec<f64> = Vec::new();
         let mut p_ttft: Vec<f64> = Vec::new();
         let mut p_total_time: Vec<f64> = Vec::new();
         let mut p_tokens: u64 = 0;
 
-        for _ in 0..(times as i32) {
-            let req = GenerateRequest {
-                model: model.clone(),
-                prompt: Some(prompt.clone()),
-                suffix: None,
-                images: None,
-                format: None,
-                system: None,
-                stream: false,
-                think: None,
-                raw: None,
-                keep_alive: None,
-                options: None,
+        for iter in 0..(times as i32) {
+            let resp = if pi == 0 && iter == 0 {
+                prefetched.take().unwrap()
+            } else {
+                let req = GenerateRequest {
+                    model: model.clone(),
+                    prompt: Some(prompt.clone()),
+                    suffix: None,
+                    images: None,
+                    format: None,
+                    system: None,
+                    stream: false,
+                    think: None,
+                    raw: None,
+                    keep_alive: None,
+                    options: None,
+                };
+                generate(req).await?
             };
-
-            let resp = generate(req).await?;
 
             let GenerationResponse {
                 total_duration,
