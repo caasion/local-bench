@@ -47,6 +47,7 @@ function App() {
   const [result, setResult] = useState<BenchmarkResult | null>(null);
   const [error, setError] = useState<string>("");
   const [expandedPrompts, setExpandedPrompts] = useState<Set<number>>(new Set());
+  const [numCtx, setNumCtx] = useState(2048);
 
   useEffect(() => {
     const loadModels = async () => {
@@ -77,7 +78,7 @@ function App() {
 
     try {
       const testResult = await invoke<BenchmarkResult>("benchmark", {
-        input: { model: selectedModel, prompts, times: 5 },
+        input: { model: selectedModel, num_ctx: numCtx, prompts, times: 5 },
       });
 
       setResult(testResult);
@@ -143,6 +144,20 @@ function App() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="num-ctx-slider">Context Window: {numCtx.toLocaleString()}</label>
+          <input
+            id="num-ctx-slider"
+            type="range"
+            min={256}
+            max={131072}
+            step={256}
+            value={numCtx}
+            onChange={(e) => setNumCtx(Number(e.target.value))}
+            disabled={isRunning}
+          />
         </div>
 
         <div className="form-group">
