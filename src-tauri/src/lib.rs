@@ -196,6 +196,7 @@ pub struct PromptResult {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BenchmarkResult {
     pub model: String,
+    pub likely_ram_spillover: bool,
     pub tokens_per_second: f32,
     pub ttft_ns: u32,
     pub total_time_ns: u64,
@@ -252,6 +253,17 @@ async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
             }
         }
     });
+
+    // Check for ram spillover 
+    let current_running_models: Vec<RunningModel> = get_all_running_models().await?
+        .models
+        // .into_iter().filter(|m| m.name == model).collect()
+        ;
+
+    let current_model = &current_running_models[0];
+
+    let likely_ram_spillover = current_model.size - (current_model.size as f64 * 0.05) as u64 > current_model.size_vram;
+
 
     // Accumulate metrics over all prompts and iterations
     let mut load_duration_sum: u64 = 0;
@@ -348,6 +360,7 @@ async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
 
     let result = BenchmarkResult {
         model,
+        likely_ram_spillover,
         tokens_per_second,
         ttft_ns: (load_duration_sum + prompt_eval_duration_sum) as u32,
         total_time_ns: total_duration_sum,
