@@ -1,4 +1,5 @@
 mod metrics;
+mod database;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -464,6 +465,7 @@ mod tests {
 
         let input = BenchmarkInput {
             model: model.clone(),
+            num_ctx: 2048,
             prompts,
             times,
         };
