@@ -1,6 +1,9 @@
 use rusqlite::Connection;
 use std::path::Path;
+use std::sync::Mutex;
 use tauri::Manager;
+
+pub struct DbState(pub Mutex<Connection>);
 
 pub fn open_db(app_handle: &tauri::AppHandle) -> rusqlite::Result<Connection> {
     let app_dir = app_handle.path().app_data_dir().unwrap();
