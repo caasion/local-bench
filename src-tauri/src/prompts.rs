@@ -1,9 +1,9 @@
 use rusqlite::params;
 
-use crate::database::DbState;
+use crate::{database::DbState, types::Prompt};
 
 #[tauri::command]
-pub fn get_all_prompts(state: tauri::State<'_, DbState>) -> Result<Vec<Profile>, String> {
+pub fn get_all_prompts(state: tauri::State<'_, DbState>) -> Result<Vec<Prompt>, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     let mut stmt = conn.prepare(
         "SELECT id, use_case_tag, content FROM prompts"
@@ -22,7 +22,7 @@ pub fn get_all_prompts(state: tauri::State<'_, DbState>) -> Result<Vec<Profile>,
     Ok(prompts)
 }
 
-pub fn get_prompt_by_use_case(state: tauri::State<'_, DbState>, use_case_tag: String) -> Result<Vec<Profile>, String> {
+pub fn get_prompt_by_use_case(state: tauri::State<'_, DbState>, use_case_tag: String) -> Result<Vec<Prompt>, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     let mut stmt = conn.prepare(
         "SELECT id, use_case_tag, content FROM prompts WHERE use_case_tag = ?1", params![use_case_tag]
