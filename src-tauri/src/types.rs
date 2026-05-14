@@ -140,7 +140,7 @@ pub struct BenchmarkResult {
 // database schemas
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Prompt {
-    pub id: String,
+    pub id: i64,
     pub use_case_tag: String,
     pub content: String,
 }
