@@ -136,3 +136,21 @@ pub struct BenchmarkResult {
     pub total_time_ns_std_dev: f64,
     pub per_prompt: Vec<PromptResult>,
 }
+
+// database schemas
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Prompt {
+    pub id: String,
+    pub use_case_tag: String,
+    pub content: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Profile {
+    pub id: Option<i64>,
+    pub name: String,
+    pub max_ttft_seconds: Option<f64>,
+    pub min_context_window: Option<f64>,
+    pub accuracy_weight: Option<f64>,
+    pub use_case_tag: String,
+}
