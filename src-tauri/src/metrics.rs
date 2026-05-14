@@ -22,7 +22,7 @@ pub fn get_gpu_vram() -> Result<GpuMetrics, Box<dyn Error>> {
 }
 
 #[tauri::command]
-pub fn get_vram() -> Result<metrics::GpuMetrics, String> {
+pub fn get_vram() -> Result<GpuMetrics, String> {
     get_gpu_vram()
         .map_err(|e| format!("GPU metrics error: {}", e))
 }
