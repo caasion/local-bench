@@ -45,7 +45,7 @@ pub fn get_prompt_by_use_case(state: tauri::State<'_, DbState>, use_case_tag: St
 pub fn create_prompt(state: tauri::State<'_, DbState>, use_case_tag: String, content: String) -> Result<i64, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     conn.execute(
-        "INSERT INTO profiles (use_case_tag, content) VALUES (?1, ?2)", params![use_case_tag, content],
+        "INSERT INTO prompts (use_case_tag, content) VALUES (?1, ?2)", params![use_case_tag, content],
     )
         .map_err(|e| e.to_string())?;
     Ok(conn.last_insert_rowid())
@@ -55,7 +55,7 @@ pub fn create_prompt(state: tauri::State<'_, DbState>, use_case_tag: String, con
 pub fn update_prompt_content(state: tauri::State<'_, DbState>, id: String, new_content: String) -> Result<(), String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     conn.execute(
-        "UPDATE profiles SET content=?1 WHERE id=?2", params![new_content, id]
+        "UPDATE prompts SET content=?1 WHERE id=?2", params![new_content, id]
     )
         .map_err(|e| e.to_string())?;
     Ok(())
@@ -65,7 +65,7 @@ pub fn update_prompt_content(state: tauri::State<'_, DbState>, id: String, new_c
 pub fn delete_prompt(state: tauri::State<'_, DbState>, id: String) -> Result<(), String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     conn.execute(
-        "DELETE FROM profiles WHERE id=?1", params![id]
+        "DELETE FROM prompts WHERE id=?1", params![id]
     )
         .map_err(|e| e.to_string())?;
     Ok(())
