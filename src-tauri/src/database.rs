@@ -13,9 +13,11 @@ pub fn open_db(app_handle: &tauri::AppHandle) -> rusqlite::Result<Connection> {
 }
 
 const SCHEMA: &str = include_str!("schema.sql");
+const SEEDS: &str = include_str!("seeds.sql");
 
 pub fn initialize_schema(conn: &Connection) -> rusqlite::Result<()> {
     conn.execute_batch(SCHEMA)?;
+    conn.execute_batch(SEEDS)?;
     Ok(())
 }
 
