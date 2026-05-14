@@ -62,15 +62,11 @@ pub async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String>
         }
     });
 
-    // Accumulate metrics over all prompts and iterations
-    let mut load_duration_sum: u64 = 0;
-    let mut prompt_eval_duration_sum: u64 = 0;
+    // Accumulators for pooled TPS: sum(eval_tokens) / sum(eval_duration)
     let mut eval_count_sum: u64 = 0;
     let mut eval_duration_sum: u64 = 0;
-    let mut total_duration_sum: u64 = 0;
 
-    // Global samples across all prompts (for aggregate stats)
-    let mut tps_samples: Vec<f64> = Vec::new();
+    // Per-run samples for mean/std-dev of TTFT and total time
     let mut ttft_samples: Vec<f64> = Vec::new();
     let mut total_time_samples: Vec<f64> = Vec::new();
 
@@ -141,14 +137,13 @@ pub async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String>
             let ec = eval_count.unwrap_or(0);
             let ed = eval_duration.unwrap_or(1);
 
-            total_duration_sum += td;
-            load_duration_sum += ld;
-            prompt_eval_duration_sum += ped;
             eval_count_sum += ec;
             eval_duration_sum += ed;
             p_tokens += ec;
 
+            // tps = eval_tokens / (eval_duration_ns / 1e9) -- per run
             let tps = if ed > 0 { (ec as f64) / (ed as f64 / 10e6) } else { 0.0 };
+            // ttft = load_duration + prompt_eval_duration (ns)
             let ttft = (ld + ped) as f64;
             let total_time = td as f64;
 
@@ -156,7 +151,6 @@ pub async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String>
             p_ttft.push(ttft);
             p_total_time.push(total_time);
 
-            tps_samples.push(tps);
             ttft_samples.push(ttft);
             total_time_samples.push(total_time);
         }
@@ -175,24 +169,20 @@ pub async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String>
 
     poller.abort();
 
-    // Compute aggregated result (preserve original tokens/sec formula)
+    // Pooled TPS: sum(eval_tokens) / sum(eval_duration_ns / 1e9)
     let tokens_per_second = if eval_duration_sum == 0 {
         0.0
     } else {
-        (eval_count_sum as f32) / ((eval_duration_sum as f32 / 10e6) as f32)
+        (eval_count_sum as f32) / (eval_duration_sum as f32 / 10e6)
     };
 
     let result = BenchmarkResult {
         model,
         likely_ram_spillover,
         tokens_per_second,
-        ttft_ns: (load_duration_sum + prompt_eval_duration_sum) as u32,
-        total_time_ns: total_duration_sum,
         total_tokens: eval_count_sum as i32,
         vram_peak_mb: vram_peak_mb.load(Ordering::Relaxed),
         cpu_peak_percent: cpu_peak.load(Ordering::Relaxed) as f32 / 100.0,
-        tokens_per_second_mean: calc_mean(&tps_samples),
-        tokens_per_second_std_dev: calc_std_dev(&tps_samples),
         ttft_ns_mean: calc_mean(&ttft_samples),
         ttft_ns_std_dev: calc_std_dev(&ttft_samples),
         total_time_ns_mean: calc_mean(&total_time_samples),
@@ -201,6 +191,13 @@ pub async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String>
     };
 
     Ok(result)
+}
+
+fn add_benchmark_result(result: BenchmarkResult) -> Result<(), String> {
+    let conn = state.0.lock().map_err(|e| e.to_string());
+    conn.execute(
+        "INSERT INTO benchmark"
+    )
 }
 
 #[cfg(test)]

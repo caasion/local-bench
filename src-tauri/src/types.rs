@@ -122,16 +122,15 @@ pub struct BenchmarkInput {
 pub struct BenchmarkResult {
     pub model: String,
     pub likely_ram_spillover: bool,
+    /// Pooled throughput: sum(eval_tokens) / sum(eval_duration)
     pub tokens_per_second: f32,
-    pub ttft_ns: u32,
-    pub total_time_ns: u64,
     pub total_tokens: i32,
     pub vram_peak_mb: u64,
     pub cpu_peak_percent: f32,
-    pub tokens_per_second_mean: f64,
-    pub tokens_per_second_std_dev: f64,
+    /// Arithmetic mean of per-run TTFT (load_duration + prompt_eval_duration) in nanoseconds
     pub ttft_ns_mean: f64,
     pub ttft_ns_std_dev: f64,
+    /// Arithmetic mean of per-run total_duration in nanoseconds
     pub total_time_ns_mean: f64,
     pub total_time_ns_std_dev: f64,
     pub per_prompt: Vec<PromptResult>,
