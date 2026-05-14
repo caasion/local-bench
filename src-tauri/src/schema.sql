@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS profiles (
     name TEXT NOT NULL,
     max_ttft_seconds REAL,
     min_context_window INTEGER,
-    accuracy_weight TEXT,
+    accuracy_weight INTEGER,
     use_case_tag TEXT
 );
 
