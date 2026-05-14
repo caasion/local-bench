@@ -22,6 +22,7 @@ pub fn get_all_prompts(state: tauri::State<'_, DbState>) -> Result<Vec<Prompt>, 
     Ok(prompts)
 }
 
+#[tauri::command]
 pub fn get_prompt_by_use_case(state: tauri::State<'_, DbState>, use_case_tag: String) -> Result<Vec<Prompt>, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     let mut stmt = conn.prepare(

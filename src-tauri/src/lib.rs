@@ -3,6 +3,7 @@ mod database;
 mod types;
 mod ollama;
 mod benchmark;
+mod prompts;
 
 use tauri::Manager;
 use rusqlite::Connection;
@@ -25,7 +26,12 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             ollama::get_models, 
             metrics::get_vram, 
-            benchmark::benchmark
+            benchmark::benchmark,
+            prompts::get_all_prompts,
+            prompts::get_prompt_by_use_case,
+            prompts::create_prompt,
+            prompts::update_prompt_content,
+            prompts::delete_prompt,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
