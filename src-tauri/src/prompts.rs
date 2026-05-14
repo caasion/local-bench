@@ -25,10 +25,10 @@ pub fn get_all_prompts(state: tauri::State<'_, DbState>) -> Result<Vec<Prompt>, 
 pub fn get_prompt_by_use_case(state: tauri::State<'_, DbState>, use_case_tag: String) -> Result<Vec<Prompt>, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     let mut stmt = conn.prepare(
-        "SELECT id, use_case_tag, content FROM prompts WHERE use_case_tag = ?1", params![use_case_tag]
+        "SELECT id, use_case_tag, content FROM prompts WHERE use_case_tag = ?1"
     ).map_err(|e| e.to_string())?;
 
-    let prompts = stmt.query_map([], |row| Ok(Prompt {
+    let prompts = stmt.query_map(params![use_case_tag], |row| Ok(Prompt {
         id: row.get(0)?,
         use_case_tag: row.get(1)?,
         content: row.get(2)?,
