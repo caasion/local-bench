@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
+import { PromptsManager } from "./PromptsManager";
 
 interface Model {
   name: string;
@@ -40,6 +41,7 @@ interface BenchmarkResult {
 const DEFAULT_PROMPT = "hello. how is the weather today? It seems quite bad in my eyes, but I'm not sure if it is actually that bad.";
 
 function App() {
+  const [view, setView] = useState<"benchmark" | "prompts">("benchmark");
   const [models, setModels] = useState<Model[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [prompts, setPrompts] = useState<string[]>([DEFAULT_PROMPT]);
@@ -126,7 +128,23 @@ function App() {
   );
 
   return (
-    <main className="container">
+    <>
+      <nav className="app-nav">
+        <button
+          className={`nav-tab${view === "benchmark" ? " active" : ""}`}
+          onClick={() => setView("benchmark")}
+        >
+          Benchmark
+        </button>
+        <button
+          className={`nav-tab${view === "prompts" ? " active" : ""}`}
+          onClick={() => setView("prompts")}
+        >
+          Prompts Library
+        </button>
+      </nav>
+      {view === "prompts" ? <PromptsManager /> : null}
+      {view === "benchmark" ? <main className="container">
       <h1>Model Benchmark</h1>
 
       <div className="benchmark-form">
@@ -270,7 +288,8 @@ function App() {
           )}
         </div>
       )}
-    </main>
+      </main> : null}
+    </>
   );
 }
 
