@@ -32,8 +32,7 @@ fn calc_std_dev(values: &[f64]) -> f64 {
     variance.sqrt()
 }
 
-#[tauri::command]
-pub async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
+pub async fn run_benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
     let BenchmarkInput { model, num_ctx, prompts, times } = input;
 
     let vram_peak_mb = Arc::new(AtomicU64::new(
@@ -66,9 +65,10 @@ pub async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String>
     let mut eval_count_sum: u64 = 0;
     let mut eval_duration_sum: u64 = 0;
 
-    // Per-run samples for mean/std-dev of TTFT and total time
+    // Per-run samples for mean/std-dev of TTFT, total time, and TPS
     let mut ttft_samples: Vec<f64> = Vec::new();
     let mut total_time_samples: Vec<f64> = Vec::new();
+    let mut tps_samples: Vec<f64> = Vec::new();
 
     let mut per_prompt: Vec<PromptResult> = Vec::new();
 
@@ -151,6 +151,7 @@ pub async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String>
             p_ttft.push(ttft);
             p_total_time.push(total_time);
 
+            tps_samples.push(tps);
             ttft_samples.push(ttft);
             total_time_samples.push(total_time);
         }
@@ -176,10 +177,12 @@ pub async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String>
         (eval_count_sum as f32) / (eval_duration_sum as f32 / 10e6)
     };
 
-    let result = BenchmarkResult {
+    Ok(BenchmarkResult {
         model,
         likely_ram_spillover,
         tokens_per_second,
+        tokens_per_second_mean: calc_mean(&tps_samples),
+        tokens_per_second_std_dev: calc_std_dev(&tps_samples),
         total_tokens: eval_count_sum as i32,
         vram_peak_mb: vram_peak_mb.load(Ordering::Relaxed),
         cpu_peak_percent: cpu_peak.load(Ordering::Relaxed) as f32 / 100.0,
@@ -188,9 +191,7 @@ pub async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String>
         total_time_ns_mean: calc_mean(&total_time_samples),
         total_time_ns_std_dev: calc_std_dev(&total_time_samples),
         per_prompt,
-    };
-
-    Ok(result)
+    })
 }
 
 fn add_benchmark_result(result: BenchmarkResult) -> Result<(), String> {
@@ -220,7 +221,7 @@ mod tests {
 
         let result = benchmark(input).await;
         match result {
-            Ok(result) => println!("{}: {} {} {}", model, result.tokens_per_second, result.ttft_ns, result.total_time_ns),
+            Ok(result) => println!("{}: {} {} {}", model, result.tokens_per_second, result.ttft_ns_mean, result.total_time_ns_mean),
             Err(e) => println!("Error: {}", e)
         }
     }
