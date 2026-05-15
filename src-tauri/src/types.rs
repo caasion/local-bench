@@ -166,7 +166,7 @@ pub struct Prompt {
 pub struct Profile {
     pub id: Option<i64>,
     pub name: String,
-    pub description: String,
+    pub description: Option<String>,
     pub max_ttft_seconds: Option<f64>,
     pub min_context_window: Option<f64>,
     pub accuracy_weight: Option<f64>,
