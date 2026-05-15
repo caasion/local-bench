@@ -164,7 +164,7 @@ pub struct Prompt {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
-    pub id: Option<i64>,
+    pub id: i64,
     pub name: String,
     pub description: Option<String>,
     pub max_ttft_seconds: Option<f64>,
