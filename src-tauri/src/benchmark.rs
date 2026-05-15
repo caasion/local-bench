@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use sysinfo::{System, ProcessesToUpdate, ProcessRefreshKind};
+use crate::database::{DbState, save_benchmark_result};
 use crate::metrics::get_gpu_vram;
 use crate::ollama::{get_all_running_models, generate};
 use crate::types::{
@@ -194,17 +195,20 @@ pub async fn run_benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, Str
     })
 }
 
-fn add_benchmark_result(result: BenchmarkResult) -> Result<(), String> {
-    let conn = state.0.lock().map_err(|e| e.to_string());
-    conn.execute(
-        "INSERT INTO benchmark"
-    )
+#[tauri::command]
+pub async fn benchmark(state: tauri::State<'_, DbState>, input: BenchmarkInput) -> Result<BenchmarkResult, String> {
+    let result = run_benchmark(input).await?;
+    {
+        let conn = state.0.lock().map_err(|e| e.to_string())?;
+        save_benchmark_result(&conn, &result).map_err(|e| e.to_string())?;
+    }
+    Ok(result)
 }
 
 #[cfg(test)]
 mod tests {
     use crate::types::BenchmarkInput;
-    use super::benchmark;
+    use super::run_benchmark;
 
     #[tokio::test]
     async fn test_benchmark() {
@@ -219,7 +223,7 @@ mod tests {
             times,
         };
 
-        let result = benchmark(input).await;
+        let result = run_benchmark(input).await;
         match result {
             Ok(result) => println!("{}: {} {} {}", model, result.tokens_per_second, result.ttft_ns_mean, result.total_time_ns_mean),
             Err(e) => println!("Error: {}", e)
