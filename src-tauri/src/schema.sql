@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS benchmark_samples (
 CREATE TABLE IF NOT EXISTS profiles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    description TEXT,
     max_ttft_seconds REAL,
     min_context_window INTEGER,
     accuracy_weight INTEGER,
