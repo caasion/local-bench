@@ -4,6 +4,7 @@ mod types;
 mod ollama;
 mod benchmark;
 mod prompts;
+mod history;
 
 use tauri::Manager;
 use rusqlite::Connection;
@@ -32,6 +33,8 @@ pub fn run() {
             prompts::create_prompt,
             prompts::update_prompt_content,
             prompts::delete_prompt,
+            history::get_benchmark_history,
+            history::delete_benchmark_run,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
