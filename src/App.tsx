@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 import { PromptsManager } from "./PromptsManager";
 import { BenchmarkHistory } from "./BenchmarkHistory";
+import { ProfilesManager } from "./ProfilesManager";
 
 interface Model {
   name: string;
@@ -40,7 +41,7 @@ interface BenchmarkResult {
 const DEFAULT_PROMPT = "hello. how is the weather today? It seems quite bad in my eyes, but I'm not sure if it is actually that bad.";
 
 function App() {
-  const [view, setView] = useState<"benchmark" | "prompts" | "history">("benchmark");
+  const [view, setView] = useState<"benchmark" | "prompts" | "history" | "profiles">("benchmark");
   const [models, setModels] = useState<Model[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [prompts, setPrompts] = useState<string[]>([DEFAULT_PROMPT]);
@@ -147,9 +148,16 @@ function App() {
         >
           History
         </button>
+        <button
+          className={`nav-tab${view === "profiles" ? " active" : ""}`}
+          onClick={() => setView("profiles")}
+        >
+          Profiles
+        </button>
       </nav>
       {view === "prompts" ? <PromptsManager /> : null}
       {view === "history" ? <BenchmarkHistory /> : null}
+      {view === "profiles" ? <ProfilesManager /> : null}
       {view === "benchmark" ? <main className="container">
       <h1>Model Benchmark</h1>
 
