@@ -665,6 +665,43 @@ button {
   padding: 2rem 0;
 }
 
+/* ── Benchmark History ── */
+.history-list {
+  max-width: 720px;
+  margin: 2rem auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.history-card {
+  background: #ffffff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
+}
+
+.history-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.history-model {
+  font-weight: 700;
+  font-size: 1.05em;
+  color: #333;
+  flex: 1;
+}
+
+.history-date {
+  font-size: 0.85em;
+  color: #888;
+  white-space: nowrap;
+}
+
 @media (prefers-color-scheme: dark) {
   .app-nav {
     background: #1e1e1e;
@@ -743,5 +780,18 @@ button {
     background: #0f0f0f;
     color: #fff;
     border-color: #24c8db;
+  }
+
+  .history-card {
+    background: #1e1e1e;
+    border-color: #444;
+  }
+
+  .history-model {
+    color: #f6f6f6;
+  }
+
+  .history-date {
+    color: #888;
   }
 }

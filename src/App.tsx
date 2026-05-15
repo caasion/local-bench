@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 import { PromptsManager } from "./PromptsManager";
+import { BenchmarkHistory } from "./BenchmarkHistory";
 
 interface Model {
   name: string;
@@ -24,8 +25,6 @@ interface BenchmarkResult {
   model: string;
   likely_ram_spillover: boolean;
   tokens_per_second: number;
-  ttft_ns: number;
-  total_time_ns: number;
   total_tokens: number;
   vram_peak_mb: number;
   cpu_peak_percent: number;
@@ -41,7 +40,7 @@ interface BenchmarkResult {
 const DEFAULT_PROMPT = "hello. how is the weather today? It seems quite bad in my eyes, but I'm not sure if it is actually that bad.";
 
 function App() {
-  const [view, setView] = useState<"benchmark" | "prompts">("benchmark");
+  const [view, setView] = useState<"benchmark" | "prompts" | "history">("benchmark");
   const [models, setModels] = useState<Model[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [prompts, setPrompts] = useState<string[]>([DEFAULT_PROMPT]);
@@ -142,8 +141,15 @@ function App() {
         >
           Prompts Library
         </button>
+        <button
+          className={`nav-tab${view === "history" ? " active" : ""}`}
+          onClick={() => setView("history")}
+        >
+          History
+        </button>
       </nav>
       {view === "prompts" ? <PromptsManager /> : null}
+      {view === "history" ? <BenchmarkHistory /> : null}
       {view === "benchmark" ? <main className="container">
       <h1>Model Benchmark</h1>
 
