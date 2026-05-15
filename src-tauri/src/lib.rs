@@ -5,6 +5,7 @@ mod ollama;
 mod benchmark;
 mod prompts;
 mod history;
+mod profiles;
 
 use tauri::Manager;
 use rusqlite::Connection;
@@ -35,6 +36,10 @@ pub fn run() {
             prompts::delete_prompt,
             history::get_benchmark_history,
             history::delete_benchmark_run,
+            profiles::get_all_profiles,
+            profiles::create_profile,
+            profiles::update_profile,
+            profiles::delete_profile
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
