@@ -11,6 +11,18 @@ interface Model {
   size: number;
 }
 
+interface Profile {
+  id: number;
+  name: string;
+  use_case_tag: string;
+}
+
+interface LibraryPrompt {
+  id: number;
+  use_case_tag: string;
+  content: string;
+}
+
 interface PromptResult {
   prompt: string;
   tokens_per_second_mean: number;
@@ -44,6 +56,8 @@ function App() {
   const [view, setView] = useState<"benchmark" | "prompts" | "history" | "profiles">("benchmark");
   const [models, setModels] = useState<Model[]>([]);
   const [selectedModel, setSelectedModel] = useState<string>("");
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
   const [prompts, setPrompts] = useState<string[]>([DEFAULT_PROMPT]);
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState<BenchmarkResult | null>(null);
@@ -56,16 +70,36 @@ function App() {
       try {
         const modelList = await invoke<Model[]>("get_models");
         setModels(modelList);
-        if (modelList.length > 0) {
-          setSelectedModel(modelList[0].name);
-        }
+        if (modelList.length > 0) setSelectedModel(modelList[0].name);
       } catch (err) {
         setError(`Failed to load models: ${err}`);
       }
     };
 
+    const loadProfiles = async () => {
+      try {
+        const data = await invoke<Profile[]>("get_all_profiles");
+        setProfiles(data);
+      } catch (err) {
+        setError(`Failed to load profiles: ${err}`);
+      }
+    };
+
     loadModels();
+    loadProfiles();
   }, []);
+
+  const handleProfileChange = async (profileId: number) => {
+    setSelectedProfileId(profileId);
+    const profile = profiles.find((p) => p.id === profileId);
+    if (!profile) return;
+    try {
+      const data = await invoke<LibraryPrompt[]>("get_prompt_by_use_case", { useCaseTag: profile.use_case_tag });
+      setPrompts(data.map((p) => p.content));
+    } catch (err) {
+      setError(`Failed to load prompts for profile: ${err}`);
+    }
+  };
 
   const runBenchmark = async () => {
     if (!selectedModel) {
@@ -163,6 +197,21 @@ function App() {
 
       <div className="benchmark-form">
         <div className="form-group">
+          <label htmlFor="profile-select">Profile:</label>
+          <select
+            id="profile-select"
+            value={selectedProfileId ?? ""}
+            onChange={(e) => handleProfileChange(Number(e.target.value))}
+            disabled={isRunning}
+          >
+            <option value="" disabled>Select a profile...</option>
+            {profiles.map((p) => (
+              <option key={p.id} value={p.id}>{p.name} ({p.use_case_tag})</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-group">
           <label htmlFor="model-select">Model:</label>
           <select
             id="model-select"
@@ -230,7 +279,7 @@ function App() {
 
         <button
           onClick={runBenchmark}
-          disabled={isRunning || !selectedModel}
+          disabled={isRunning || !selectedModel || selectedProfileId === null}
           className="primary-btn"
         >
           {isRunning ? "Running Benchmark..." : "Run Benchmark"}
