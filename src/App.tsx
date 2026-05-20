@@ -6,6 +6,7 @@ import { PromptsPage } from "./PromptsPage";
 import { HistoryPage } from "./HistoryPage";
 import { ProfilesPage } from "./ProfilesPage";
 import { SettingsPage } from "./SettingsPage";
+import { PromptsManager } from "./PromptsManager";
 
 type View = "home" | "benchmark" | "prompts" | "history" | "profiles" | "settings";
 
@@ -119,7 +120,7 @@ function App() {
       <main className="app-main">
         {view === "home" && <HomePage onNavigate={(v) => setView(v as View)} />}
         {view === "benchmark" && <BenchmarkPage />}
-        {view === "prompts" && <PromptsPage />}
+        {view === "prompts" && <PromptsManager />}
         {view === "history" && <HistoryPage />}
         {view === "profiles" && <ProfilesPage />}
         {view === "settings" && <SettingsPage />}
