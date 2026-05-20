@@ -88,7 +88,7 @@ export function PromptsManager() {
   };
 
   return (
-    <main className="p-8 bg-zinc-800 min-h-full rounded-tl-md">
+    <div className="page">
       <h1 className="text-4xl font-normal text-white mb-6">Prompts</h1>
 
       {/* Search bar */}
@@ -208,6 +208,6 @@ export function PromptsManager() {
           </div>
         ))}
       </div>
-    </main>
+    </div>
   );
 }
