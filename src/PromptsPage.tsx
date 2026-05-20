@@ -54,17 +54,20 @@ export function PromptsPage() {
   };
 
   return (
-    <div className="page prompts-page">
+    <div className="page">
       <h1 className="page__title">Prompts</h1>
 
-      <div className="prompts-toolbar">
-        <div className="prompts-search">
-          <svg className="prompts-search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <div className="mb-4">
+        <div className="relative max-w-[400px]">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
+            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          >
             <circle cx="11" cy="11" r="8" />
             <path d="M21 21l-4.35-4.35" />
           </svg>
           <input
-            className="prompts-search__input"
+            className="w-full py-[9px] px-3 pl-9 rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg-input)] text-[var(--text-primary)] font-[inherit] text-[0.875rem] outline-none placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:shadow-[0_0_0_2px_var(--accent-muted)]"
             type="text"
             placeholder="Search prompts..."
             value={searchQuery}
@@ -73,12 +76,17 @@ export function PromptsPage() {
         </div>
       </div>
 
-      <div className="prompts-tabs-row">
-        <div className="prompts-tabs">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex gap-1">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
-              className={`prompts-tab${activeCategory === cat ? " prompts-tab--active" : ""}`}
+              className={[
+                "px-4 py-1.5 rounded-[var(--radius-sm)] border font-[inherit] text-[0.8rem] font-medium cursor-pointer transition-all duration-150",
+                activeCategory === cat
+                  ? "bg-[var(--accent)] border-[var(--accent)] text-white hover:bg-[var(--accent-hover)]"
+                  : "bg-transparent border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+              ].join(" ")}
               onClick={() => { setActiveCategory(cat); setSearchQuery(""); }}
             >
               {cat}
@@ -91,48 +99,48 @@ export function PromptsPage() {
       </div>
 
       {creating && (
-        <div className="prompt-create-card">
-          <h3 className="prompt-create-card__title">New {activeCategory} Prompt</h3>
+        <div className="bg-[var(--bg-card)] border border-[var(--accent)] rounded-[var(--radius-md)] p-5 mb-5">
+          <h3 className="text-[0.95rem] font-semibold text-[var(--text-primary)] mb-3">New {activeCategory} Prompt</h3>
           <textarea
-            className="prompt-textarea"
+            className="w-full p-3 rounded-[var(--radius-sm)] border border-[var(--accent)] bg-[var(--bg-input)] text-[var(--text-primary)] font-['Courier_New',monospace] text-[0.85rem] resize-y outline-none box-border focus:shadow-[0_0_0_2px_var(--accent-muted)]"
             value={newContent}
             onChange={(e) => setNewContent(e.target.value)}
             rows={4}
             placeholder="Enter prompt content..."
             autoFocus
           />
-          <div className="prompt-card-actions">
+          <div className="flex gap-2 mt-2.5">
             <button className="btn btn--primary btn--sm" onClick={handleCreate}>Save</button>
             <button className="btn btn--ghost btn--sm" onClick={() => { setCreating(false); setNewContent(""); }}>Cancel</button>
           </div>
         </div>
       )}
 
-      <div className="prompts-section">
+      <div className="flex flex-col gap-3">
         <h2 className="subsection-heading">{activeCategory}</h2>
         {filtered.length === 0 && (
           <p className="empty-state">No prompts found.</p>
         )}
         {filtered.map((p) => (
-          <div key={p.id} className="prompt-card">
+          <div key={p.id} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-4 px-5">
             {editingId === p.id ? (
               <>
                 <textarea
-                  className="prompt-textarea"
+                  className="w-full p-3 rounded-[var(--radius-sm)] border border-[var(--accent)] bg-[var(--bg-input)] text-[var(--text-primary)] font-['Courier_New',monospace] text-[0.85rem] resize-y outline-none box-border focus:shadow-[0_0_0_2px_var(--accent-muted)]"
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
                   rows={4}
                   autoFocus
                 />
-                <div className="prompt-card-actions">
+                <div className="flex gap-2 mt-2.5">
                   <button className="btn btn--primary btn--sm" onClick={() => saveEdit(p.id)}>Save</button>
                   <button className="btn btn--ghost btn--sm" onClick={cancelEdit}>Cancel</button>
                 </div>
               </>
             ) : (
               <>
-                <p className="prompt-card__content">{p.content}</p>
-                <div className="prompt-card-actions">
+                <p className="text-[0.85rem] text-[var(--text-secondary)] leading-relaxed mb-3">{p.content}</p>
+                <div className="flex gap-2 mt-2.5">
                   <button className="btn btn--accent btn--sm" onClick={() => startEdit(p)}>Edit</button>
                   <button className="btn btn--danger btn--sm" onClick={() => deletePrompt(p.id)}>Delete</button>
                 </div>

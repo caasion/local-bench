@@ -30,16 +30,21 @@ export function ProfilesPage() {
   const isEditing = editingId === selectedId && editDraft;
 
   return (
-    <div className="page profiles-page">
+    <div className="page">
       <h1 className="page__title">Profiles</h1>
 
-      <div className="profiles-layout">
-        <div className="profiles-form-panel">
-          <div className="profiles-list-tabs">
+      <div className="grid grid-cols-2 gap-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-1.5 mb-2">
             {profiles.map((p) => (
               <button
                 key={p.id}
-                className={`profiles-tab${selectedId === p.id ? " profiles-tab--active" : ""}`}
+                className={[
+                  "px-4 py-1.5 rounded-[var(--radius-sm)] border font-[inherit] text-[0.8rem] font-medium cursor-pointer transition-all duration-150",
+                  selectedId === p.id
+                    ? "bg-[var(--accent)] border-[var(--accent)] text-white"
+                    : "bg-transparent border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+                ].join(" ")}
                 onClick={() => { setSelectedId(p.id); cancelEdit(); }}
               >
                 {p.name}
@@ -48,7 +53,7 @@ export function ProfilesPage() {
           </div>
 
           {selected && !isEditing && (
-            <div className="profile-detail-form">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-5">
               <div className="form-group">
                 <label className="form-label">Profile Name</label>
                 <div className="form-value-display">{selected.name}</div>
@@ -61,7 +66,7 @@ export function ProfilesPage() {
                 <label className="form-label">Description</label>
                 <div className="form-value-display">{selected.description || "—"}</div>
               </div>
-              <div className="form-row-2col">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="form-group">
                   <label className="form-label">Max TTFT (seconds)</label>
                   <div className="form-value-display">{selected.max_ttft_seconds ?? "—"}</div>
@@ -75,14 +80,14 @@ export function ProfilesPage() {
                 <label className="form-label">Accuracy Weight</label>
                 <div className="form-value-display">{selected.accuracy_weight ?? "—"}</div>
               </div>
-              <div className="profile-form-actions">
+              <div className="flex gap-2 mt-2">
                 <button className="btn btn--primary btn--sm" onClick={() => startEdit(selected)}>Edit</button>
               </div>
             </div>
           )}
 
           {isEditing && editDraft && (
-            <div className="profile-detail-form">
+            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-5">
               <div className="form-group">
                 <label className="form-label">Profile Name</label>
                 <input
@@ -110,7 +115,7 @@ export function ProfilesPage() {
                   onChange={(e) => setEditDraft({ ...editDraft, description: e.target.value || null })}
                 />
               </div>
-              <div className="form-row-2col">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="form-group">
                   <label className="form-label">Max TTFT (seconds)</label>
                   <input
@@ -140,7 +145,7 @@ export function ProfilesPage() {
                   onChange={(e) => setEditDraft({ ...editDraft, accuracy_weight: e.target.value ? Number(e.target.value) : null })}
                 />
               </div>
-              <div className="profile-form-actions">
+              <div className="flex gap-2 mt-2">
                 <button className="btn btn--primary btn--sm" onClick={saveEdit}>Save</button>
                 <button className="btn btn--ghost btn--sm" onClick={cancelEdit}>Cancel</button>
               </div>
@@ -148,7 +153,7 @@ export function ProfilesPage() {
           )}
         </div>
 
-        <div className="profiles-result-panel">
+        <div className="max-h-[calc(100vh-140px)] overflow-y-auto">
           {latestRun && <ResultCard run={latestRun} compact />}
         </div>
       </div>

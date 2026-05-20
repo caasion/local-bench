@@ -13,9 +13,9 @@ export function BenchmarkPage() {
   };
 
   return (
-    <div className="page benchmark-page">
-      <div className="benchmark-page__header">
-        <h1 className="page__title">Benchmark</h1>
+    <div className="page">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="page__title" style={{ marginBottom: 0 }}>Benchmark</h1>
         <button
           className="btn btn--primary"
           onClick={handleRun}
@@ -25,8 +25,8 @@ export function BenchmarkPage() {
         </button>
       </div>
 
-      <div className="benchmark-selectors">
-        <div className="benchmark-selector-col">
+      <div className="grid grid-cols-2 gap-6 mb-2">
+        <div className="flex flex-col gap-2">
           <label className="selector-label">Profile</label>
           <select
             className="selector-dropdown"
@@ -40,7 +40,7 @@ export function BenchmarkPage() {
           </select>
           <button className="btn btn--ghost btn--sm">Edit Profile</button>
         </div>
-        <div className="benchmark-selector-col">
+        <div className="flex flex-col gap-2">
           <label className="selector-label">Models</label>
           <select
             className="selector-dropdown"
@@ -59,70 +59,50 @@ export function BenchmarkPage() {
 
       <h2 className="section-heading">Details</h2>
 
-      <div className="benchmark-status-row">
-        <span className="benchmark-status-label">Benchmark Status</span>
-        <span className={`benchmark-status-badge${isRunning ? " benchmark-status-badge--active" : " benchmark-status-badge--inactive"}`}>
-          <span className="status-dot" />
+      <div className="flex items-center gap-3 mb-5 px-[18px] py-[14px] bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)]">
+        <span className="text-[0.85rem] font-medium text-[var(--text-secondary)] flex-1">Benchmark Status</span>
+        <span className={[
+          "inline-flex items-center gap-1.5 text-[0.8rem] font-semibold px-3 py-1 rounded-full",
+          isRunning
+            ? "bg-[rgba(34,197,94,0.12)] text-[var(--success)]"
+            : "bg-[var(--danger-muted)] text-[var(--danger)]",
+        ].join(" ")}>
+          <span className="w-1.5 h-1.5 rounded-full bg-current" />
           {isRunning ? "Running" : "Inactive"}
         </span>
       </div>
 
-      <div className="benchmark-prompt-section">
+      <div className="mb-6">
         <h3 className="subsection-heading">Active Prompt</h3>
-        <div className="benchmark-prompt-box">
+        <div className="p-4 bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] text-[var(--text-secondary)] text-[0.85rem] leading-relaxed">
           This is a placeholder for the prompt(s) sent during benchmarking. Currently showing the prompts associated with the "{selectedProfile?.name}" profile ({selectedProfile?.use_case_tag} use case). These prompts will be sent to the model during the benchmark run to measure performance metrics.
         </div>
       </div>
 
-      <div className="benchmark-metrics-row">
-        <div className="benchmark-metric-card">
-          <h4 className="benchmark-metric-card__title">GPU</h4>
-          <div className="benchmark-metric-card__placeholder">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
-              <path d="M3 3v18h18" /><path d="M7 16l4-8 4 4 4-8" />
-            </svg>
-            <span>Graph of utilization</span>
-          </div>
-        </div>
-        <div className="benchmark-metric-card">
-          <h4 className="benchmark-metric-card__title">vRAM</h4>
-          <div className="benchmark-metric-card__placeholder">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
-              <path d="M3 3v18h18" /><path d="M7 16l4-8 4 4 4-8" />
-            </svg>
-            <span>Graph of utilization</span>
-          </div>
-        </div>
-        <div className="benchmark-metric-card">
-          <h4 className="benchmark-metric-card__title">CPU</h4>
-          <div className="benchmark-metric-card__placeholder">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
-              <path d="M3 3v18h18" /><path d="M7 16l4-8 4 4 4-8" />
-            </svg>
-            <span>Graph of utilization</span>
-          </div>
-        </div>
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        {["GPU", "vRAM", "CPU"].map((title) => (
+          <MetricCard key={title} title={title} />
+        ))}
       </div>
 
-      <div className="benchmark-metrics-row benchmark-metrics-row--2col">
-        <div className="benchmark-metric-card">
-          <h4 className="benchmark-metric-card__title">Total tokens</h4>
-          <div className="benchmark-metric-card__placeholder">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
-              <path d="M3 3v18h18" /><path d="M7 16l4-8 4 4 4-8" />
-            </svg>
-            <span>Graph of utilization</span>
-          </div>
-        </div>
-        <div className="benchmark-metric-card">
-          <h4 className="benchmark-metric-card__title">Tokens per second</h4>
-          <div className="benchmark-metric-card__placeholder">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
-              <path d="M3 3v18h18" /><path d="M7 16l4-8 4 4 4-8" />
-            </svg>
-            <span>Graph of utilization</span>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        {["Total tokens", "Tokens per second"].map((title) => (
+          <MetricCard key={title} title={title} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MetricCard({ title }: { title: string }) {
+  return (
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-4">
+      <h4 className="text-[0.85rem] font-semibold text-[var(--text-primary)] mb-4">{title}</h4>
+      <div className="h-20 flex flex-col items-center justify-center gap-2 text-[var(--text-muted)] text-[0.75rem] border border-dashed border-[var(--border)] rounded-[var(--radius-sm)]">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
+          <path d="M3 3v18h18" /><path d="M7 16l4-8 4 4 4-8" />
+        </svg>
+        <span>Graph of utilization</span>
       </div>
     </div>
   );

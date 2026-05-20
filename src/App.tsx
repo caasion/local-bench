@@ -75,45 +75,48 @@ const SETTINGS_NAV = {
   ),
 };
 
+function NavItem({ item, isActive, onClick }: { item: typeof NAV_ITEMS[0]; isActive: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={[
+        "relative w-full min-h-[52px] flex flex-col items-center justify-center gap-1 px-1 py-2 my-1",
+        "border-0 font-[inherit] cursor-pointer transition-all duration-150",
+        isActive
+          ? "bg-[var(--bg-base)] text-[var(--accent)] hover:bg-[rgba(217,70,239,0.2)]"
+          : "bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]",
+        isActive
+          ? "before:content-[''] before:absolute before:left-0 before:top-[20%] before:h-[60%] before:w-[3px] before:bg-[var(--accent)] before:rounded-r"
+          : "",
+      ].join(" ")}
+    >
+      {item.icon}
+      {!isActive && (
+        <span className="text-[0.8rem] font-medium tracking-[0.01em] leading-none">
+          {item.label}
+        </span>
+      )}
+    </button>
+  );
+}
+
 function App() {
   const [view, setView] = useState<View>("home");
 
   return (
-    <div className="app-layout">
-      <nav className="sidebar">
-        <div className="sidebar__nav">
-          {NAV_ITEMS.map((item) => {
-            const isActive = view === item.id;
-            return (
-              <button
-                key={item.id}
-                className={`sidebar__item${isActive ? " sidebar__item--active" : ""}`}
-                onClick={() => setView(item.id)}
-              >
-                {item.icon}
-                {!isActive && <span className="sidebar__item-label">{item.label}</span>}
-              </button>
-            );
-          })}
+    <div className="flex h-screen overflow-hidden">
+      <nav className="w-[86px] min-w-[72px] bg-[var(--bg-sidebar)] flex flex-col items-stretch py-4">
+        <div className="flex flex-col gap-0.5 flex-1">
+          {NAV_ITEMS.map((item) => (
+            <NavItem key={item.id} item={item} isActive={view === item.id} onClick={() => setView(item.id)} />
+          ))}
         </div>
-        <div className="sidebar__bottom">
-          {[SETTINGS_NAV].map((item) => {
-            const isActive = view === item.id;
-            return (
-              <button
-                key={item.id}
-                className={`sidebar__item${isActive ? " sidebar__item--active" : ""}`}
-                onClick={() => setView(item.id)}
-              >
-                {item.icon}
-                {!isActive && <span className="sidebar__item-label">{item.label}</span>}
-              </button>
-            );
-          })}
+        <div className="mt-auto">
+          <NavItem item={SETTINGS_NAV} isActive={view === "settings"} onClick={() => setView("settings")} />
         </div>
       </nav>
 
-      <main className="main-content">
+      <main className="flex-1 overflow-y-auto p-8 bg-[var(--bg-base)]">
         {view === "home" && <HomePage onNavigate={(v) => setView(v as View)} />}
         {view === "benchmark" && <BenchmarkPage />}
         {view === "prompts" && <PromptsPage />}

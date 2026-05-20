@@ -47,10 +47,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
   ];
 
   return (
-    <div className="page home-page">
+    <div className="page">
       <h1 className="page__title">Home</h1>
 
-      <div className="home-selectors">
+      <div className="grid grid-cols-2 gap-4 mb-4">
         <ActionCard
           icon={
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -95,51 +95,58 @@ export function HomePage({ onNavigate }: HomePageProps) {
         />
       </div>
 
-      <ActionCard
-        icon={
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M3 3v18h18" />
-            <path d="M7 16l4-8 4 4 4-8" />
-          </svg>
-        }
-        title="Benchmark"
-        description="Run a benchmark."
-        actions={
-          <>
-            <button className="btn btn--primary" onClick={() => onNavigate("benchmark")}>
-              Run Benchmark
-            </button>
-            <button className="btn btn--secondary" onClick={() => onNavigate("history")}>
-              View Details
-            </button>
-          </>
-        }
-      />
+      <div className="mb-7">
+        <ActionCard
+          icon={
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M3 3v18h18" />
+              <path d="M7 16l4-8 4 4 4-8" />
+            </svg>
+          }
+          title="Benchmark"
+          description="Run a benchmark."
+          actions={
+            <>
+              <button className="btn btn--primary" onClick={() => onNavigate("benchmark")}>
+                Run Benchmark
+              </button>
+              <button className="btn btn--secondary" onClick={() => onNavigate("history")}>
+                View Details
+              </button>
+            </>
+          }
+        />
+      </div>
 
       <h2 className="section-heading">Models</h2>
 
       {benchmarkedModels.length === 0 ? (
         <p className="empty-state">No models benchmarked.</p>
       ) : (
-        <div className="model-results-list">
+        <div className="flex flex-col gap-2">
           {benchmarkedModels.map((run) => {
             const model = MOCK_MODELS.find((m) => m.name === run.model_name);
             const score = overallScore(run);
             const isExpanded = expandedModel === run.model_name;
 
             return (
-              <div key={run.model_name} className="model-result-item">
+              <div key={run.model_name} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] overflow-hidden">
                 <button
-                  className={`model-result-item__header${isExpanded ? " model-result-item__header--expanded" : ""}`}
+                  className={[
+                    "flex items-center gap-4 px-[18px] py-[14px] w-full bg-transparent border-0 text-inherit font-[inherit] cursor-pointer transition-[background] duration-150 hover:bg-[var(--bg-hover)]",
+                    isExpanded ? "border-b border-[var(--border)]" : "",
+                  ].join(" ")}
                   onClick={() => setExpandedModel(isExpanded ? null : run.model_name)}
                 >
-                  <span className="model-result-item__score">{score}</span>
-                  <div className="model-result-item__info">
-                    <span className="model-result-item__name">{run.model_name}</span>
-                    <span className="model-result-item__meta">Last benchmarked: {timeAgo(run.run_at)}</span>
+                  <span className="flex items-center justify-center w-10 h-10 rounded-[var(--radius-sm)] bg-[var(--success)] text-white text-[0.85rem] font-bold shrink-0">
+                    {score}
+                  </span>
+                  <div className="flex-1 flex flex-col text-left">
+                    <span className="text-[0.9rem] font-semibold text-[var(--text-primary)]">{run.model_name}</span>
+                    <span className="text-[0.75rem] text-[var(--text-muted)] mt-0.5">Last benchmarked: {timeAgo(run.run_at)}</span>
                   </div>
                   <svg
-                    className={`model-result-item__chevron${isExpanded ? " model-result-item__chevron--open" : ""}`}
+                    className={`text-[var(--text-muted)] shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
                     width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                   >
                     <path d="M6 9l6 6 6-6" />
@@ -147,8 +154,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </button>
 
                 {isExpanded && (
-                  <div className="model-result-item__body">
-                    <div className="model-result-item__columns">
+                  <div className="p-5 px-6">
+                    <div className="grid grid-cols-2 gap-6 mb-5">
                       <div>
                         <h4 className="result-card__section-title">Score Breakdown</h4>
                         <p className="result-card__section-subtitle">Model score based on profile criteria</p>
@@ -184,7 +191,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                       </div>
                     </div>
 
-                    <div className="model-result-item__details">
+                    <div className="border-t border-[var(--border)] pt-4">
                       <h4 className="result-card__section-title">Details</h4>
                       <p className="result-card__section-subtitle">Benchmark result details</p>
                       <div className="result-card__metrics-grid">
