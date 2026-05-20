@@ -12,7 +12,16 @@ CREATE TABLE IF NOT EXISTS benchmark_runs (
     model_id INTEGER NOT NULL REFERENCES models(id),
     prompt_id INTEGER,
     run_at TEXT NOT NULL,
-    mode TEXT NOT NULL
+    mode TEXT,
+    tokens_per_second REAL,
+    total_tokens INTEGER,
+    vram_peak_mb REAL,
+    cpu_peak_percent REAL,
+    ttft_ns_mean REAL,
+    ttft_ns_std_dev REAL,
+    total_time_ns_mean REAL,
+    total_time_ns_std_dev REAL,
+    likely_ram_spillover BOOLEAN
 );
 
 CREATE TABLE IF NOT EXISTS benchmark_samples (
@@ -27,9 +36,10 @@ CREATE TABLE IF NOT EXISTS benchmark_samples (
 CREATE TABLE IF NOT EXISTS profiles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    description TEXT,
     max_ttft_seconds REAL,
     min_context_window INTEGER,
-    accuracy_weight TEXT,
+    accuracy_weight INTEGER,
     use_case_tag TEXT
 );
 

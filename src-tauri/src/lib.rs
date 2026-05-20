@@ -3,17 +3,14 @@ mod database;
 mod types;
 mod ollama;
 mod benchmark;
+mod prompts;
+mod history;
+mod profiles;
 
-use metrics::get_gpu_vram;
 use tauri::Manager;
 use rusqlite::Connection;
 use std::sync::Mutex;
 
-#[tauri::command]
-fn get_vram() -> Result<metrics::GpuMetrics, String> {
-    get_gpu_vram()
-        .map_err(|e| format!("GPU metrics error: {}", e))
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -28,7 +25,22 @@ pub fn run() {
             app.manage(database::DbState(Mutex::new(conn)));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![ollama::get_models, get_vram, benchmark::benchmark])
+        .invoke_handler(tauri::generate_handler![
+            ollama::get_models, 
+            metrics::get_vram, 
+            benchmark::benchmark,
+            prompts::get_all_prompts,
+            prompts::get_prompt_by_use_case,
+            prompts::create_prompt,
+            prompts::update_prompt_content,
+            prompts::delete_prompt,
+            history::get_benchmark_history,
+            history::delete_benchmark_run,
+            profiles::get_all_profiles,
+            profiles::create_profile,
+            profiles::update_profile,
+            profiles::delete_profile
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

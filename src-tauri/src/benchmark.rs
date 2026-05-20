@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use sysinfo::{System, ProcessesToUpdate, ProcessRefreshKind};
+use crate::database::{DbState, save_benchmark_result};
 use crate::metrics::get_gpu_vram;
 use crate::ollama::{get_all_running_models, generate};
 use crate::types::{
@@ -32,8 +33,7 @@ fn calc_std_dev(values: &[f64]) -> f64 {
     variance.sqrt()
 }
 
-#[tauri::command]
-pub async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
+pub async fn run_benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
     let BenchmarkInput { model, num_ctx, prompts, times } = input;
 
     let vram_peak_mb = Arc::new(AtomicU64::new(
@@ -62,17 +62,14 @@ pub async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String>
         }
     });
 
-    // Accumulate metrics over all prompts and iterations
-    let mut load_duration_sum: u64 = 0;
-    let mut prompt_eval_duration_sum: u64 = 0;
+    // Accumulators for pooled TPS: sum(eval_tokens) / sum(eval_duration)
     let mut eval_count_sum: u64 = 0;
     let mut eval_duration_sum: u64 = 0;
-    let mut total_duration_sum: u64 = 0;
 
-    // Global samples across all prompts (for aggregate stats)
-    let mut tps_samples: Vec<f64> = Vec::new();
+    // Per-run samples for mean/std-dev of TTFT, total time, and TPS
     let mut ttft_samples: Vec<f64> = Vec::new();
     let mut total_time_samples: Vec<f64> = Vec::new();
+    let mut tps_samples: Vec<f64> = Vec::new();
 
     let mut per_prompt: Vec<PromptResult> = Vec::new();
 
@@ -141,14 +138,13 @@ pub async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String>
             let ec = eval_count.unwrap_or(0);
             let ed = eval_duration.unwrap_or(1);
 
-            total_duration_sum += td;
-            load_duration_sum += ld;
-            prompt_eval_duration_sum += ped;
             eval_count_sum += ec;
             eval_duration_sum += ed;
             p_tokens += ec;
 
+            // tps = eval_tokens / (eval_duration_ns / 1e9) -- per run
             let tps = if ed > 0 { (ec as f64) / (ed as f64 / 10e6) } else { 0.0 };
+            // ttft = load_duration + prompt_eval_duration (ns)
             let ttft = (ld + ped) as f64;
             let total_time = td as f64;
 
@@ -175,38 +171,44 @@ pub async fn benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String>
 
     poller.abort();
 
-    // Compute aggregated result (preserve original tokens/sec formula)
+    // Pooled TPS: sum(eval_tokens) / sum(eval_duration_ns / 1e9)
     let tokens_per_second = if eval_duration_sum == 0 {
         0.0
     } else {
-        (eval_count_sum as f32) / ((eval_duration_sum as f32 / 10e6) as f32)
+        (eval_count_sum as f32) / (eval_duration_sum as f32 / 10e6)
     };
 
-    let result = BenchmarkResult {
+    Ok(BenchmarkResult {
         model,
         likely_ram_spillover,
         tokens_per_second,
-        ttft_ns: (load_duration_sum + prompt_eval_duration_sum) as u32,
-        total_time_ns: total_duration_sum,
+        tokens_per_second_mean: calc_mean(&tps_samples),
+        tokens_per_second_std_dev: calc_std_dev(&tps_samples),
         total_tokens: eval_count_sum as i32,
         vram_peak_mb: vram_peak_mb.load(Ordering::Relaxed),
         cpu_peak_percent: cpu_peak.load(Ordering::Relaxed) as f32 / 100.0,
-        tokens_per_second_mean: calc_mean(&tps_samples),
-        tokens_per_second_std_dev: calc_std_dev(&tps_samples),
         ttft_ns_mean: calc_mean(&ttft_samples),
         ttft_ns_std_dev: calc_std_dev(&ttft_samples),
         total_time_ns_mean: calc_mean(&total_time_samples),
         total_time_ns_std_dev: calc_std_dev(&total_time_samples),
         per_prompt,
-    };
+    })
+}
 
+#[tauri::command]
+pub async fn benchmark(state: tauri::State<'_, DbState>, input: BenchmarkInput) -> Result<BenchmarkResult, String> {
+    let result = run_benchmark(input).await?;
+    {
+        let conn = state.0.lock().map_err(|e| e.to_string())?;
+        save_benchmark_result(&conn, &result).map_err(|e| e.to_string())?;
+    }
     Ok(result)
 }
 
 #[cfg(test)]
 mod tests {
     use crate::types::BenchmarkInput;
-    use super::benchmark;
+    use super::run_benchmark;
 
     #[tokio::test]
     async fn test_benchmark() {
@@ -221,9 +223,9 @@ mod tests {
             times,
         };
 
-        let result = benchmark(input).await;
+        let result = run_benchmark(input).await;
         match result {
-            Ok(result) => println!("{}: {} {} {}", model, result.tokens_per_second, result.ttft_ns, result.total_time_ns),
+            Ok(result) => println!("{}: {} {} {}", model, result.tokens_per_second, result.ttft_ns_mean, result.total_time_ns_mean),
             Err(e) => println!("Error: {}", e)
         }
     }
