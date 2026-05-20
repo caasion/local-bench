@@ -9,15 +9,17 @@ interface ActionCardProps {
 
 export function ActionCard({ icon, title, description, actions }: ActionCardProps) {
   return (
-    <div className="action-card">
-      <div className="action-card__info">
-        <span className="action-card__icon">{icon}</span>
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-sm)] px-6 py-5 flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        <span className="flex text-[var(--text-primary)]">{icon}</span>
         <div>
-          <h3 className="action-card__title">{title}</h3>
-          {description && <p className="action-card__description">{description}</p>}
+          <h3 className="text-base font-semibold text-[var(--text-primary)]">{title}</h3>
+          {description && (
+            <p className="text-[0.8rem] text-[var(--text-secondary)] mt-1">{description}</p>
+          )}
         </div>
       </div>
-      {actions && <div className="action-card__actions">{actions}</div>}
+      {actions && <div className="flex gap-2">{actions}</div>}
     </div>
   );
 }

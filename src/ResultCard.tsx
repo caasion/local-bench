@@ -20,19 +20,23 @@ export function ResultCard({ run, onClose, compact }: ResultCardProps) {
   ];
 
   return (
-    <div className={`result-card${compact ? " result-card--compact" : ""}`}>
-      <div className="result-card__header">
-        <div className="result-card__header-left">
-          <span className="result-card__icon">
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-sm)] overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
+        <div className="flex items-center gap-2">
+          <span className="flex text-[var(--accent)]">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="4" y="4" width="16" height="16" rx="2" />
               <path d="M9 9h6M9 13h6M9 17h4" />
             </svg>
           </span>
-          <span className="result-card__model-name">{run.model_name}</span>
+          <span className="text-[0.95rem] font-semibold text-[var(--text-primary)]">{run.model_name}</span>
         </div>
         {onClose && (
-          <button className="result-card__close" onClick={onClose}>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 flex items-center justify-center border-0 bg-transparent text-[var(--text-muted)] cursor-pointer rounded hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors duration-150"
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
@@ -40,76 +44,65 @@ export function ResultCard({ run, onClose, compact }: ResultCardProps) {
         )}
       </div>
 
-      <div className="result-card__body">
-        <div className="result-card__scores">
-          <h4 className="result-card__section-title">Score Breakdown</h4>
-          <p className="result-card__section-subtitle">Score per comparison over all runs</p>
-          <div className="score-bars">
+      {/* Body */}
+      <div className={`grid grid-cols-2 p-5 ${compact ? "gap-4" : "gap-6"}`}>
+        {/* Score Breakdown */}
+        <div>
+          <h4 className="text-[0.85rem] font-semibold text-[var(--text-primary)] mb-1">Score Breakdown</h4>
+          <p className="text-[0.7rem] text-[var(--text-muted)] mb-4">Score per comparison over all runs</p>
+          <div className="flex flex-col gap-2">
             {scoreEntries.map((entry) => (
-              <div key={entry.label} className="score-bar">
-                <div className="score-bar__label">{entry.label}</div>
-                <div className="score-bar__track">
+              <div key={entry.label} className="grid grid-cols-[80px_1fr_40px] items-center gap-2">
+                <span className="text-[0.75rem] font-medium text-[var(--text-secondary)]">{entry.label}</span>
+                <div className="h-2 bg-[var(--bg-surface)] rounded-full overflow-hidden">
                   <div
-                    className="score-bar__fill"
+                    className="h-full bg-[var(--accent)] rounded-full transition-[width] duration-[600ms] ease-out"
                     style={{ width: `${entry.value}%` }}
                   />
                 </div>
-                <div className="score-bar__value">{entry.value}%</div>
+                <span className="text-[0.7rem] font-semibold text-[var(--text-primary)] text-right">{entry.value}%</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="result-card__model-details">
-          <h4 className="result-card__section-title">Model Details</h4>
-          <div className="model-details-list">
-            <div className="model-detail-row">
-              <span className="model-detail-key">Model</span>
-              <span className="model-detail-value">{run.model_name}</span>
-            </div>
-            <div className="model-detail-row">
-              <span className="model-detail-key">Parameters</span>
-              <span className="model-detail-value">{model?.parameters ?? "N/A"}</span>
-            </div>
-            <div className="model-detail-row">
-              <span className="model-detail-key">Quantization</span>
-              <span className="model-detail-value">{model?.quantization ?? "N/A"}</span>
-            </div>
-            <div className="model-detail-row">
-              <span className="model-detail-key">Family</span>
-              <span className="model-detail-value">{model?.family ?? "N/A"}</span>
-            </div>
+        {/* Model Details */}
+        <div>
+          <h4 className="text-[0.85rem] font-semibold text-[var(--text-primary)] mb-1">Model Details</h4>
+          <p className="text-[0.7rem] text-[var(--text-muted)] mb-4"> </p>
+          <div className="flex flex-col gap-2">
+            {[
+              { key: "Model", value: run.model_name },
+              { key: "Parameters", value: model?.parameters ?? "N/A" },
+              { key: "Quantization", value: model?.quantization ?? "N/A" },
+              { key: "Family", value: model?.family ?? "N/A" },
+            ].map(({ key, value }) => (
+              <div key={key} className="flex justify-between py-1">
+                <span className="text-[0.75rem] text-[var(--text-muted)]">{key}</span>
+                <span className="text-[0.75rem] font-medium text-[var(--text-primary)]">{value}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="result-card__details">
-        <h4 className="result-card__section-title">Details</h4>
-        <div className="result-card__metrics-grid">
-          <div className="metric-item">
-            <span className="metric-label">Total token count</span>
-            <span className="metric-value">{run.total_tokens.toLocaleString()}</span>
-          </div>
-          <div className="metric-item">
-            <span className="metric-label">Throughput/per second</span>
-            <span className="metric-value">{run.tokens_per_second.toFixed(1)}</span>
-          </div>
-          <div className="metric-item">
-            <span className="metric-label">Time to first token</span>
-            <span className="metric-value">{formatTime(run.ttft_ns_mean)}</span>
-          </div>
-          <div className="metric-item">
-            <span className="metric-label">Total time</span>
-            <span className="metric-value">{formatTime(run.total_time_ns_mean)}</span>
-          </div>
-          <div className="metric-item">
-            <span className="metric-label">VRAM peak</span>
-            <span className="metric-value">{run.vram_peak_mb} MB</span>
-          </div>
-          <div className="metric-item">
-            <span className="metric-label">CPU usage %</span>
-            <span className="metric-value">{run.cpu_peak_percent.toFixed(1)}%</span>
-          </div>
+      {/* Details */}
+      <div className="px-5 pb-5">
+        <h4 className="text-[0.85rem] font-semibold text-[var(--text-primary)] mb-1">Details</h4>
+        <div className="grid grid-cols-2 gap-2 mt-3">
+          {[
+            { label: "Total token count", value: run.total_tokens.toLocaleString() },
+            { label: "Throughput/per second", value: run.tokens_per_second.toFixed(1) },
+            { label: "Time to first token", value: formatTime(run.ttft_ns_mean) },
+            { label: "Total time", value: formatTime(run.total_time_ns_mean) },
+            { label: "VRAM peak", value: `${run.vram_peak_mb} MB` },
+            { label: "CPU usage %", value: `${run.cpu_peak_percent.toFixed(1)}%` },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex justify-between items-center px-3 py-2 bg-[var(--bg-surface)] rounded-[var(--radius-sm)]">
+              <span className="text-[0.75rem] text-[var(--text-muted)]">{label}</span>
+              <span className="text-[0.75rem] font-semibold text-[var(--text-primary)] font-['Courier_New',monospace]">{value}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

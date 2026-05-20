@@ -104,8 +104,8 @@ function App() {
   const [view, setView] = useState<View>("home");
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <nav className="w-[86px] min-w-[72px] bg-[var(--bg-sidebar)] flex flex-col items-stretch py-4">
+    <div className="app-layout">
+      <nav className="app-sidebar">
         <div className="flex flex-col gap-0.5 flex-1">
           {NAV_ITEMS.map((item) => (
             <NavItem key={item.id} item={item} isActive={view === item.id} onClick={() => setView(item.id)} />
@@ -116,7 +116,7 @@ function App() {
         </div>
       </nav>
 
-      <main className="flex-1 overflow-y-auto p-8 bg-[var(--bg-base)]">
+      <main className="app-main">
         {view === "home" && <HomePage onNavigate={(v) => setView(v as View)} />}
         {view === "benchmark" && <BenchmarkPage />}
         {view === "prompts" && <PromptsPage />}

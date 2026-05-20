@@ -154,71 +154,57 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </button>
 
                 {isExpanded && (
-                  <div className="p-5 px-6">
+                  <div className="px-6 py-5">
                     <div className="grid grid-cols-2 gap-6 mb-5">
                       <div>
-                        <h4 className="result-card__section-title">Score Breakdown</h4>
-                        <p className="result-card__section-subtitle">Model score based on profile criteria</p>
-                        <div className="score-bars">
+                        <h4 className="text-[0.85rem] font-semibold text-[var(--text-primary)] mb-1">Score Breakdown</h4>
+                        <p className="text-[0.7rem] text-[var(--text-muted)] mb-4">Model score based on profile criteria</p>
+                        <div className="flex flex-col gap-2">
                           {scoreEntries(run).map((entry) => (
-                            <div key={entry.label} className="score-bar">
-                              <div className="score-bar__label">{entry.label}</div>
-                              <div className="score-bar__track">
-                                <div className="score-bar__fill" style={{ width: `${entry.value}%` }} />
+                            <div key={entry.label} className="grid grid-cols-[80px_1fr_40px] items-center gap-2">
+                              <span className="text-[0.75rem] font-medium text-[var(--text-secondary)]">{entry.label}</span>
+                              <div className="h-2 bg-[var(--bg-surface)] rounded-full overflow-hidden">
+                                <div className="h-full bg-[var(--accent)] rounded-full transition-[width] duration-[600ms] ease-out" style={{ width: `${entry.value}%` }} />
                               </div>
-                              <div className="score-bar__value">{entry.value}/100</div>
+                              <span className="text-[0.7rem] font-semibold text-[var(--text-primary)] text-right">{entry.value}/100</span>
                             </div>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <h4 className="result-card__section-title">Model Details</h4>
-                        <p className="result-card__section-subtitle">Model configuration and HuggingFace data</p>
-                        <div className="model-details-list">
-                          <div className="model-detail-row">
-                            <span className="model-detail-key">Effort</span>
-                            <span className="model-detail-value">{model?.quantization ?? "N/A"}</span>
-                          </div>
-                          <div className="model-detail-row">
-                            <span className="model-detail-key">Thinking</span>
-                            <span className="model-detail-value">yes</span>
-                          </div>
-                          <div className="model-detail-row">
-                            <span className="model-detail-key">Context Window</span>
-                            <span className="model-detail-value">100k</span>
-                          </div>
+                        <h4 className="text-[0.85rem] font-semibold text-[var(--text-primary)] mb-1">Model Details</h4>
+                        <p className="text-[0.7rem] text-[var(--text-muted)] mb-4">Model configuration and HuggingFace data</p>
+                        <div className="flex flex-col gap-2">
+                          {[
+                            { key: "Effort", value: model?.quantization ?? "N/A" },
+                            { key: "Thinking", value: "yes" },
+                            { key: "Context Window", value: "100k" },
+                          ].map(({ key, value }) => (
+                            <div key={key} className="flex justify-between py-1">
+                              <span className="text-[0.75rem] text-[var(--text-muted)]">{key}</span>
+                              <span className="text-[0.75rem] font-medium text-[var(--text-primary)]">{value}</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
 
                     <div className="border-t border-[var(--border)] pt-4">
-                      <h4 className="result-card__section-title">Details</h4>
-                      <p className="result-card__section-subtitle">Benchmark result details</p>
-                      <div className="result-card__metrics-grid">
-                        <div className="metric-item">
-                          <span className="metric-label">Tokens per second</span>
-                          <span className="metric-value">{run.tokens_per_second.toFixed(1)} <span className="metric-delta">+/- 0.23</span></span>
-                        </div>
-                        <div className="metric-item">
-                          <span className="metric-label">Time until first token</span>
-                          <span className="metric-value">{formatTime(run.ttft_ns_mean)}</span>
-                        </div>
-                        <div className="metric-item">
-                          <span className="metric-label">Total tokens</span>
-                          <span className="metric-value">{run.total_tokens.toLocaleString()}</span>
-                        </div>
-                        <div className="metric-item">
-                          <span className="metric-label">Total tokens</span>
-                          <span className="metric-value">{run.total_tokens.toLocaleString()}</span>
-                        </div>
-                        <div className="metric-item">
-                          <span className="metric-label">VRam peak</span>
-                          <span className="metric-value">{run.vram_peak_mb.toLocaleString()}</span>
-                        </div>
-                        <div className="metric-item">
-                          <span className="metric-label">CPU peak %</span>
-                          <span className="metric-value">{run.cpu_peak_percent.toFixed(1)}</span>
-                        </div>
+                      <h4 className="text-[0.85rem] font-semibold text-[var(--text-primary)] mb-1">Details</h4>
+                      <p className="text-[0.7rem] text-[var(--text-muted)] mb-3">Benchmark result details</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { label: "Tokens per second", value: <>{run.tokens_per_second.toFixed(1)} <span className="text-[0.65rem] text-[var(--text-muted)] font-normal">+/- 0.23</span></> },
+                          { label: "Time until first token", value: formatTime(run.ttft_ns_mean) },
+                          { label: "Total tokens", value: run.total_tokens.toLocaleString() },
+                          { label: "VRam peak", value: run.vram_peak_mb.toLocaleString() },
+                          { label: "CPU peak %", value: run.cpu_peak_percent.toFixed(1) },
+                        ].map(({ label, value }) => (
+                          <div key={label} className="flex justify-between items-center px-3 py-2 bg-[var(--bg-surface)] rounded-[var(--radius-sm)]">
+                            <span className="text-[0.75rem] text-[var(--text-muted)]">{label}</span>
+                            <span className="text-[0.75rem] font-semibold text-[var(--text-primary)] font-['Courier_New',monospace]">{value}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
