@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MOCK_MODELS, MOCK_PROFILES, MOCK_HISTORY, formatBytes } from "./mockData";
 import { ResultCard } from "./ResultCard";
+import { ActionCard } from "./ActionCard";
 
 interface HomePageProps {
   onNavigate: (view: string) => void;
@@ -44,28 +45,26 @@ export function HomePage({ onNavigate }: HomePageProps) {
         </div>
       </div>
 
-      <div className="home-benchmark-card">
-        <div className="home-benchmark-card__info">
-          <span className="home-benchmark-card__icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M3 3v18h18" />
-              <path d="M7 16l4-8 4 4 4-8" />
-            </svg>
-          </span>
-          <div>
-            <h3 className="home-benchmark-card__title">Benchmark</h3>
-            <p className="home-benchmark-card__subtitle">{selectedModel}</p>
-          </div>
-        </div>
-        <div className="home-benchmark-card__actions">
-          <button className="btn btn--primary" onClick={() => onNavigate("benchmark")}>
-            Run Benchmark
-          </button>
-          <button className="btn btn--secondary" onClick={() => setShowResult(true)}>
-            View Details
-          </button>
-        </div>
-      </div>
+      <ActionCard
+        icon={
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M3 3v18h18" />
+            <path d="M7 16l4-8 4 4 4-8" />
+          </svg>
+        }
+        title="Benchmark"
+        description={selectedModel}
+        actions={
+          <>
+            <button className="btn btn--primary" onClick={() => onNavigate("benchmark")}>
+              Run Benchmark
+            </button>
+            <button className="btn btn--secondary" onClick={() => setShowResult(true)}>
+              View Details
+            </button>
+          </>
+        }
+      />
 
       <div className="home-models-section">
         <h2 className="section-heading">Models</h2>
