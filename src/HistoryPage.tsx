@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { MOCK_HISTORY, type MockBenchmarkRun } from "./mockData";
 import { HistoryItem } from "./HistoryItem";
-import { HistoryInfoCard } from "./HistoryInfoCard";
 import { ResultCard } from "./ResultCard";
 
 export function HistoryPage() {

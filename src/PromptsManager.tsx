@@ -89,11 +89,11 @@ export function PromptsManager() {
 
   return (
     <div className="page">
-      <h1 className="text-4xl font-normal text-white mb-6">Prompts</h1>
+      <h1 className="page__title">Prompts</h1>
 
       {/* Search bar */}
-      <div className="flex items-center bg-zinc-700 rounded-full px-4 py-2.5 mb-4 gap-2">
-        <svg className="w-6 h-6 text-neutral-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="flex items-center bg-[var(--bg-input)] rounded-[var(--radius-sm)] px-4 py-2.5 mb-4 gap-2">
+        <svg className="w-5 h-5 text-[var(--text-muted)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -101,14 +101,19 @@ export function PromptsManager() {
           placeholder="Search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="bg-transparent text-white text-xl placeholder-neutral-400 outline-none flex-1"
+          className="bg-transparent text-[var(--text-primary)] text-[0.875rem] placeholder-[var(--text-muted)] outline-none flex-1"
         />
       </div>
 
       {/* Tag filters + Add Prompt button */}
       <div className="flex items-center gap-2 mb-6 flex-wrap">
         <button
-          className={`px-3 py-0.5 text-base rounded-lg border ${filterTag === "all" ? "border-fuchsia-500 text-fuchsia-400 bg-zinc-700" : "border-neutral-400 text-white bg-zinc-700"}`}
+          className={[
+            "px-3 py-0.5 text-[0.8rem] rounded-[var(--radius-sm)] border font-medium transition-colors",
+            filterTag === "all"
+              ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-muted)]"
+              : "border-[var(--border)] text-[var(--text-secondary)] bg-[var(--bg-input)] hover:text-[var(--text-primary)]",
+          ].join(" ")}
           onClick={() => setFilterTag("all")}
         >
           All ({prompts.length})
@@ -116,94 +121,99 @@ export function PromptsManager() {
         {uniqueTags.map((tag) => (
           <button
             key={tag}
-            className={`px-3 py-0.5 text-base rounded-lg border ${filterTag === tag ? "border-fuchsia-500 text-fuchsia-400 bg-zinc-700" : "border-neutral-400 text-white bg-zinc-700"}`}
+            className={[
+              "px-3 py-0.5 text-[0.8rem] rounded-[var(--radius-sm)] border font-medium transition-colors",
+              filterTag === tag
+                ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-muted)]"
+                : "border-[var(--border)] text-[var(--text-secondary)] bg-[var(--bg-input)] hover:text-[var(--text-primary)]",
+            ].join(" ")}
             onClick={() => setFilterTag(tag)}
           >
             {tag}
           </button>
         ))}
         <button
-          className="ml-auto bg-fuchsia-500 text-black font-medium text-lg px-6 py-2 rounded-md"
+          className="btn btn--primary ml-auto"
           onClick={() => setCreating(true)}
         >
           Add Prompt
         </button>
       </div>
 
-      {error && <div className="text-red-400 mb-4">{error}</div>}
+      {error && <div className="text-[var(--danger)] mb-4 text-[0.875rem]">{error}</div>}
 
       {/* Create form */}
       {creating && (
-        <div className="bg-neutral-700 rounded-lg p-4 mb-4">
-          <h3 className="text-white text-lg font-medium mb-3">New Prompt</h3>
-          <div className="mb-3">
-            <label className="text-neutral-400 text-sm mb-1 block">Use Case Tag</label>
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-5 mb-4">
+          <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-4">New Prompt</h3>
+          <div className="form-group">
+            <label className="form-label">Use Case Tag</label>
             <input
               type="text"
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
               placeholder="e.g. coding, reasoning, chat..."
               list="tag-suggestions"
-              className="bg-zinc-700 text-white rounded-lg px-3 py-2 w-full outline-none border border-neutral-600 focus:border-fuchsia-500"
+              className="form-input"
             />
             <datalist id="tag-suggestions">
               {uniqueTags.map((t) => <option key={t} value={t} />)}
             </datalist>
           </div>
-          <div className="mb-3">
-            <label className="text-neutral-400 text-sm mb-1 block">Content</label>
+          <div className="form-group">
+            <label className="form-label">Content</label>
             <textarea
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}
               rows={5}
               placeholder="Enter prompt content..."
               autoFocus
-              className="bg-zinc-700 text-white rounded-lg px-3 py-2 w-full outline-none border border-neutral-600 focus:border-fuchsia-500 resize-none"
+              className="form-input resize-none"
             />
           </div>
           <div className="flex gap-2">
-            <button className="bg-fuchsia-500 text-black font-medium px-4 py-2 rounded-md" onClick={handleCreate}>Save</button>
-            <button className="bg-zinc-700 text-white px-4 py-2 rounded-lg" onClick={() => { setCreating(false); setError(""); }}>Cancel</button>
+            <button className="btn btn--primary btn--sm" onClick={handleCreate}>Save</button>
+            <button className="btn btn--ghost btn--sm" onClick={() => { setCreating(false); setError(""); }}>Cancel</button>
           </div>
         </div>
       )}
 
       {/* Prompts list */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         {visible.length === 0 && (
-          <p className="text-neutral-400">
+          <p className="empty-state">
             No prompts{filterTag !== "all" ? ` tagged "${filterTag}"` : ""}.
           </p>
         )}
         {visible.map((p) => (
-          <div key={p.id} className="bg-neutral-700 rounded-lg overflow-hidden p-3.5">
-            <div className="flex items-start justify-between mb-2">
-              <span className="bg-zinc-700 text-white text-base px-3 py-0.5 rounded-lg border border-neutral-400">
+          <div key={p.id} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-4">
+            <div className="flex items-start justify-between mb-3">
+              <span className="px-2.5 py-0.5 text-[0.75rem] font-medium rounded-[var(--radius-sm)] bg-[var(--accent-muted)] text-[var(--accent)] border border-[var(--accent-muted)]">
                 {p.use_case_tag}
               </span>
               {editingId !== p.id && (
                 <div className="flex gap-2">
-                  <button className="bg-zinc-700 text-white font-medium text-lg px-4 py-1.5 rounded-lg" onClick={() => startEdit(p)}>Edit</button>
-                  <button className="bg-zinc-700 text-red-400 font-medium text-lg px-4 py-1.5 rounded-lg" onClick={() => handleDelete(p.id)}>Delete</button>
+                  <button className="btn btn--ghost btn--sm" onClick={() => startEdit(p)}>Edit</button>
+                  <button className="btn btn--danger btn--sm" onClick={() => handleDelete(p.id)}>Delete</button>
                 </div>
               )}
             </div>
             {editingId === p.id ? (
               <>
                 <textarea
-                  className="w-full bg-zinc-700 text-white text-sm rounded-lg px-3 py-2 outline-none border border-neutral-600 focus:border-fuchsia-500 resize-none"
+                  className="form-input resize-none w-full"
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
                   rows={6}
                   autoFocus
                 />
                 <div className="flex gap-2 mt-2">
-                  <button className="bg-fuchsia-500 text-black font-medium px-4 py-2 rounded-md" onClick={() => saveEdit(p.id)}>Save</button>
-                  <button className="bg-zinc-700 text-white px-4 py-2 rounded-lg" onClick={cancelEdit}>Cancel</button>
+                  <button className="btn btn--primary btn--sm" onClick={() => saveEdit(p.id)}>Save</button>
+                  <button className="btn btn--ghost btn--sm" onClick={cancelEdit}>Cancel</button>
                 </div>
               </>
             ) : (
-              <p className="text-white text-sm">{p.content}</p>
+              <p className="text-[0.875rem] text-[var(--text-primary)]">{p.content}</p>
             )}
           </div>
         ))}
