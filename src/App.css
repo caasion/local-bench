@@ -283,6 +283,15 @@
   min-width: 0;
 }
 
+.form-input--editable {
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.form-input--editable:focus {
+  background: rgba(255, 255, 255, 0.15);
+  outline: none;
+}
+
 .form-textarea {
   resize: vertical;
 }

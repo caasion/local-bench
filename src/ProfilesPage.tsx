@@ -5,62 +5,45 @@ import { ProfileCard } from "./ProfileCard";
 export function ProfilesPage() {
   const [profiles, setProfiles] = useState<MockProfile[]>([...MOCK_PROFILES]);
   const [selectedId, setSelectedId] = useState<number>(MOCK_PROFILES[0]?.id ?? 0);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editDraft, setEditDraft] = useState<MockProfile | null>(null);
 
   const selected = profiles.find((p) => p.id === selectedId);
 
-  const startEdit = (p: MockProfile) => {
-    setEditingId(p.id);
-    setEditDraft({ ...p });
+  const handleFieldChange = (updated: MockProfile) => {
+    setProfiles((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
   };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditDraft(null);
-  };
-
-  const saveEdit = () => {
-    if (!editDraft) return;
-    setProfiles((prev) => prev.map((p) => (p.id === editDraft.id ? editDraft : p)));
-    cancelEdit();
-  };
-
-  const isEditing = editingId === selectedId;
 
   return (
     <div className="page">
       <h1 className="page__title">Profiles</h1>
 
-      <div className="grid grid-cols-2 gap-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex gap-1.5 mb-2">
-            {profiles.map((p) => (
-              <button
-                key={p.id}
-                className={[
-                  "px-4 py-1.5 rounded-[var(--radius-sm)] border font-[inherit] text-[0.8rem] font-medium cursor-pointer transition-all duration-150",
-                  selectedId === p.id
-                    ? "bg-[var(--accent)] border-[var(--accent)] text-white"
-                    : "bg-transparent border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
-                ].join(" ")}
-                onClick={() => { setSelectedId(p.id); cancelEdit(); }}
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
+      <div className="grid grid-cols-[280px_1fr] gap-6 min-h-0">
+        <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[calc(100vh-140px)] pr-1">
+          {profiles.map((p) => (
+            <div
+              key={p.id}
+              className={`group border rounded-[var(--radius-sm)] px-5 py-4 cursor-pointer transition-all duration-150 ${
+                selectedId === p.id
+                  ? "bg-accent/20 hover:bg-accent/25 border-accent"
+                  : "bg-white/10 hover:bg-white/15 border-border"
+              }`}
+              onClick={() => setSelectedId(p.id)}
+            >
+              <h3 className="text-[0.9rem] font-semibold text-text-primary">{p.name}</h3>
+              <p className="text-[0.75rem] text-text-secondary mt-0.5">{p.use_case_tag}</p>
+            </div>
+          ))}
+        </div>
 
-          {selected && (
+        <div className="min-h-0 overflow-y-auto max-h-[calc(100vh-140px)]">
+          {selected ? (
             <ProfileCard
               profile={selected}
-              isEditing={isEditing}
-              editDraft={editDraft}
-              onEdit={() => startEdit(selected)}
-              onSave={saveEdit}
-              onCancel={cancelEdit}
-              onDraftChange={setEditDraft}
+              onFieldChange={handleFieldChange}
             />
+          ) : (
+            <div className="flex items-center justify-center h-[200px]">
+              <p className="empty-state">Select a profile to view details.</p>
+            </div>
           )}
         </div>
       </div>
