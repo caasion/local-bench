@@ -50,9 +50,9 @@ export function BenchmarkPage() {
       {/* Profile + Models cards */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         {/* Profile card */}
-        <div className="bg-[var(--bg-card)] rounded-sm overflow-hidden p-5">
-          <div className="flex items-start justify-between mb-5">
-            <div className="flex items-center gap-3">
+        <div className="bg-[var(--bg-card)] rounded-sm overflow-hidden px-6 py-5">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-4">
               <div className="flex text-[24px]">
                 <FaUser />
               </div>
