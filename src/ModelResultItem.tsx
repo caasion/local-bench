@@ -17,7 +17,7 @@ export function ModelResultItem({ run, score, timeAgo }: ModelResultItemProps) {
         className="flex items-center gap-4 px-[18px] py-[14px] w-full bg-transparent border-0 text-inherit font-[inherit] cursor-pointer transition-[background] duration-150 hover:bg-[var(--bg-hover)]"
         onClick={() => setExpanded(!expanded)}
       >
-        <span className="flex items-center justify-center w-10 h-10 rounded-[var(--radius-sm)] bg-[var(--success)] text-white text-[0.85rem] font-bold shrink-0">
+        <span className="flex items-center justify-center px-2 p-1 rounded-[var(--radius-sm)] border-2 border-[var(--success)] text-white text-[0.85rem] font-bold shrink-0">
           {score}
         </span>
         <div className="flex-1 flex flex-col text-left">

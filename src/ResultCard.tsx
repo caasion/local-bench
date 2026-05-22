@@ -21,29 +21,27 @@ export function ResultCard({ run, onClose, compact, embedded }: ResultCardProps)
   return (
     <div className={embedded ? "p-8" : "bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-8"}>
       <div className="grid grid-cols-2 gap-x-12 gap-y-10">
-        {/* Profile Criteria */}
+        {/* Model Details */}
         <div>
-          <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Profile Criteria</h3>
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-              <span className="text-[0.875rem] text-[var(--text-secondary)]">Maximum time until first token</span>
-              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">10s</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[0.875rem] text-[var(--text-secondary)]">Minimum context window</span>
-              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">4096</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[0.875rem] text-[var(--text-secondary)]">Test Thinking</span>
-              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">yes</span>
-            </div>
+          <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Model Details</h3>
+          <div className="flex flex-col gap-2">
+            {[
+              { key: "Family", value: model?.family ?? "N/A" },
+              { key: "Parameters", value: model?.parameters ?? "N/A" },
+              { key: "Quantization", value: model?.quantization ?? "N/A" },
+            ].map(({ key, value }) => (
+              <div key={key} className="flex justify-between items-center">
+                <span className="text-[0.875rem] text-[var(--text-secondary)]">{key}</span>
+                <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{value}</span>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Score Breakdown */}
         <div>
           <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Score Breakdown</h3>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
             {scoreEntries.map((entry) => {
               const pct = Math.round((entry.value / 100) * 100);
               const display = Math.round((entry.value / 100) * entry.max);
@@ -60,10 +58,29 @@ export function ResultCard({ run, onClose, compact, embedded }: ResultCardProps)
           </div>
         </div>
 
+        {/* Profile Criteria */}
+        <div>
+          <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Profile Criteria</h3>
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="text-[0.875rem] text-[var(--text-secondary)]">Maximum time until first token</span>
+              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">10s</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[0.875rem] text-[var(--text-secondary)]">Minimum context window</span>
+              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">4096</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[0.875rem] text-[var(--text-secondary)]">Test Thinking</span>
+              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">yes</span>
+            </div>
+          </div>
+        </div>
+
         {/* Result Details */}
         <div>
           <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Result Details</h3>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-2">
             <div className="flex justify-between items-center">
               <span className="text-[0.875rem] text-[var(--text-secondary)]">Tokens per second</span>
               <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.tokens_per_second.toFixed(1)}/s</span>
@@ -87,22 +104,7 @@ export function ResultCard({ run, onClose, compact, embedded }: ResultCardProps)
           </div>
         </div>
 
-        {/* Model Details */}
-        <div>
-          <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Model Details</h3>
-          <div className="flex flex-col gap-4">
-            {[
-              { key: "Family", value: model?.family ?? "N/A" },
-              { key: "Parameters", value: model?.parameters ?? "N/A" },
-              { key: "Quantization", value: model?.quantization ?? "N/A" },
-            ].map(({ key, value }) => (
-              <div key={key} className="flex justify-between items-center">
-                <span className="text-[0.875rem] text-[var(--text-secondary)]">{key}</span>
-                <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        
       </div>
     </div>
   );
