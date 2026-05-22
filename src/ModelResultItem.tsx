@@ -14,7 +14,7 @@ export function ModelResultItem({ run, score, timeAgo }: ModelResultItemProps) {
   return (
     <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] overflow-hidden">
       <button
-        className="flex items-center gap-4 px-[18px] py-[14px] w-full bg-transparent border-0 text-inherit font-[inherit] cursor-pointer transition-[background] duration-150 hover:bg-[var(--bg-hover)]"
+        className="flex items-center gap-4 px-[18px] py-[14px] w-full bg-transparent border-0 text-inherit font-[inherit] cursor-pointer transition-[background] duration-150 hover:bg-white/10"
         onClick={() => setExpanded(!expanded)}
       >
         <span className="flex items-center justify-center px-2 p-1 rounded-[var(--radius-sm)] border-2 border-[var(--success)] text-white text-[0.85rem] font-bold shrink-0">
