@@ -38,7 +38,11 @@ export function HistoryPage() {
 
         <div className="min-h-0 overflow-y-auto max-h-[calc(100vh-140px)]">
           {selectedRun ? (
-            <ResultCard run={selectedRun} />
+            <>
+              <h1 className="page__title" style={{ marginBottom: 0 }}>{selectedRun.model_name}</h1>
+              <p className="text-secondary mb-2">{new Date(selectedRun.run_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
+              <ResultCard run={selectedRun} />
+            </>
           ) : (
             <div className="flex items-center justify-center h-[200px]">
               <p className="empty-state">Select a benchmark run to view details.</p>

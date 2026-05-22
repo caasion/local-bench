@@ -5,6 +5,7 @@ import { ProfileCard } from "./ProfileCard";
 export function ProfilesPage() {
   const [profiles, setProfiles] = useState<MockProfile[]>([...MOCK_PROFILES]);
   const [selectedId, setSelectedId] = useState<number>(MOCK_PROFILES[0]?.id ?? 0);
+  const [selectedProfile, setSelectedProfile] = useState<MockProfile>(MOCK_PROFILES[0])
 
   const selected = profiles.find((p) => p.id === selectedId);
 
@@ -36,10 +37,14 @@ export function ProfilesPage() {
 
         <div className="min-h-0 overflow-y-auto max-h-[calc(100vh-140px)]">
           {selected ? (
-            <ProfileCard
-              profile={selected}
-              onFieldChange={handleFieldChange}
-            />
+            <>
+              <h1 className="page__title" style={{ marginBottom: 0 }}>{selected.name}</h1>
+              <ProfileCard
+                profile={selected}
+                onFieldChange={handleFieldChange}
+              />
+            </>
+            
           ) : (
             <div className="flex items-center justify-center h-[200px]">
               <p className="empty-state">Select a profile to view details.</p>
