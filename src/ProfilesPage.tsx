@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { MOCK_PROFILES, MOCK_HISTORY, type MockProfile } from "./mockData";
-import { ResultCard } from "./ResultCard";
+import { MOCK_PROFILES, type MockProfile } from "./mockData";
+import { ProfileCard } from "./ProfileCard";
 
 export function ProfilesPage() {
   const [profiles, setProfiles] = useState<MockProfile[]>([...MOCK_PROFILES]);
@@ -9,7 +9,6 @@ export function ProfilesPage() {
   const [editDraft, setEditDraft] = useState<MockProfile | null>(null);
 
   const selected = profiles.find((p) => p.id === selectedId);
-  const latestRun = MOCK_HISTORY[0];
 
   const startEdit = (p: MockProfile) => {
     setEditingId(p.id);
@@ -27,7 +26,7 @@ export function ProfilesPage() {
     cancelEdit();
   };
 
-  const isEditing = editingId === selectedId && editDraft;
+  const isEditing = editingId === selectedId;
 
   return (
     <div className="page">
@@ -52,104 +51,16 @@ export function ProfilesPage() {
             ))}
           </div>
 
-          {selected && !isEditing && (
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-5">
-              <div className="form-group">
-                <label className="form-label">Profile Name</label>
-                <div className="form-value-display">{selected.name}</div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Use Case Tag</label>
-                <div className="form-value-display">{selected.use_case_tag}</div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Description</label>
-                <div className="form-value-display">{selected.description || "—"}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="form-group">
-                  <label className="form-label">Max TTFT (seconds)</label>
-                  <div className="form-value-display">{selected.max_ttft_seconds ?? "—"}</div>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Min Context Window</label>
-                  <div className="form-value-display">{selected.min_context_window ?? "—"}</div>
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Accuracy Weight</label>
-                <div className="form-value-display">{selected.accuracy_weight ?? "—"}</div>
-              </div>
-              <div className="flex gap-2 mt-2">
-                <button className="btn btn--primary btn--sm" onClick={() => startEdit(selected)}>Edit</button>
-              </div>
-            </div>
-          )}
-
-          {isEditing && editDraft && (
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-5">
-              <div className="form-group">
-                <label className="form-label">Profile Name</label>
-                <input
-                  className="form-input"
-                  type="text"
-                  value={editDraft.name}
-                  onChange={(e) => setEditDraft({ ...editDraft, name: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Use Case Tag</label>
-                <input
-                  className="form-input"
-                  type="text"
-                  value={editDraft.use_case_tag}
-                  onChange={(e) => setEditDraft({ ...editDraft, use_case_tag: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Description</label>
-                <input
-                  className="form-input"
-                  type="text"
-                  value={editDraft.description ?? ""}
-                  onChange={(e) => setEditDraft({ ...editDraft, description: e.target.value || null })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="form-group">
-                  <label className="form-label">Max TTFT (seconds)</label>
-                  <input
-                    className="form-input"
-                    type="number"
-                    value={editDraft.max_ttft_seconds ?? ""}
-                    onChange={(e) => setEditDraft({ ...editDraft, max_ttft_seconds: e.target.value ? Number(e.target.value) : null })}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Min Context Window</label>
-                  <input
-                    className="form-input"
-                    type="number"
-                    value={editDraft.min_context_window ?? ""}
-                    onChange={(e) => setEditDraft({ ...editDraft, min_context_window: e.target.value ? Number(e.target.value) : null })}
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Accuracy Weight</label>
-                <input
-                  className="form-input"
-                  type="number"
-                  step="0.1"
-                  value={editDraft.accuracy_weight ?? ""}
-                  onChange={(e) => setEditDraft({ ...editDraft, accuracy_weight: e.target.value ? Number(e.target.value) : null })}
-                />
-              </div>
-              <div className="flex gap-2 mt-2">
-                <button className="btn btn--primary btn--sm" onClick={saveEdit}>Save</button>
-                <button className="btn btn--ghost btn--sm" onClick={cancelEdit}>Cancel</button>
-              </div>
-            </div>
+          {selected && (
+            <ProfileCard
+              profile={selected}
+              isEditing={isEditing}
+              editDraft={editDraft}
+              onEdit={() => startEdit(selected)}
+              onSave={saveEdit}
+              onCancel={cancelEdit}
+              onDraftChange={setEditDraft}
+            />
           )}
         </div>
       </div>
