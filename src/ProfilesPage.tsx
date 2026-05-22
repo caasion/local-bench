@@ -21,15 +21,15 @@ export function ProfilesPage() {
           {profiles.map((p) => (
             <div
               key={p.id}
-              className={`group border rounded-[var(--radius-sm)] px-5 py-4 cursor-pointer transition-all duration-150 ${
+              className={`group border rounded-[var(--radius-sm)] px-6 py-4 cursor-pointer transition-all duration-150 ${
                 selectedId === p.id
                   ? "bg-accent/20 hover:bg-accent/25 border-accent"
                   : "bg-white/10 hover:bg-white/15 border-border"
               }`}
               onClick={() => setSelectedId(p.id)}
             >
-              <h3 className="text-[0.9rem] font-semibold text-text-primary">{p.name}</h3>
-              <p className="text-[0.75rem] text-text-secondary mt-0.5">{p.use_case_tag}</p>
+              <h3 className="font-semibold text-text-primary">{p.name}</h3>
+              <p className="text-[0.8rem] text-text-secondary mt-0.5">{p.use_case_tag}</p>
             </div>
           ))}
         </div>
