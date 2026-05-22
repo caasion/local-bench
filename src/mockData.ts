@@ -24,6 +24,14 @@ export interface MockPrompt {
   content: string;
 }
 
+export interface Scores {
+    ttft: number;
+    throughput: number;
+    vram: number;
+    cpu: number;
+    consistency: number;
+  }
+
 export interface MockBenchmarkRun {
   id: number;
   model_name: string;
@@ -38,13 +46,7 @@ export interface MockBenchmarkRun {
   total_time_ns_mean: number;
   total_time_ns_std_dev: number;
   likely_ram_spillover: boolean;
-  scores: {
-    ttft: number;
-    throughput: number;
-    vram: number;
-    cpu: number;
-    consistency: number;
-  };
+  scores: Scores;
 }
 
 export const MOCK_MODELS: MockModel[] = [
@@ -138,21 +140,4 @@ export const MOCK_HISTORY: MockBenchmarkRun[] = [
   },
 ];
 
-export const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return (bytes / Math.pow(k, i)).toFixed(1) + " " + sizes[i];
-};
 
-export const formatTime = (ns: number): string => {
-  const ms = ns / 1e6;
-  return ms.toFixed(2) + " ms";
-};
-
-export const formatTimeShort = (ns: number): string => {
-  const ms = ns / 1e6;
-  if (ms > 1000) return (ms / 1000).toFixed(2) + "s";
-  return ms.toFixed(0) + "ms";
-};
