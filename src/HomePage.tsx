@@ -1,27 +1,43 @@
-import { useState } from "react";
-import { MOCK_MODELS, MOCK_PROFILES, MOCK_HISTORY } from "./mockData";
-import type { MockBenchmarkRun } from "./mockData";
+import { useEffect, useState } from "react";
+import type { BenchmarkRunRecord, Model, Profile } from "./types";
+import { getModels, getAllProfiles, getBenchmarkHistory } from "./api";
 import { ActionCard } from "./ActionCard";
 import { ModelResultItem } from "./ModelResultItem";
 import { CustomSelect } from "./CustomSelect";
 import { TbBoxModel } from "react-icons/tb";
 import { FaUser, FaPlay } from "react-icons/fa6";
-import { timeAgo } from "./utils";
+import { timeAgo, computeScores } from "./utils";
 
 interface HomePageProps {
   onNavigate: (view: string) => void;
 }
 
-function overallScore(run: MockBenchmarkRun): number {
-  const s = run.scores;
+function overallScore(run: BenchmarkRunRecord): number {
+  const s = computeScores(run);
   return Math.round((s.ttft + s.throughput + s.vram + s.cpu + s.consistency) / 5);
 }
 
 export function HomePage({ onNavigate }: HomePageProps) {
-  const [selectedProfileId, setSelectedProfileId] = useState<number>(MOCK_PROFILES[0].id);
-  const [selectedModel, setSelectedModel] = useState<string>(MOCK_MODELS[0].name);
+  const [models, setModels] = useState<Model[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [history, setHistory] = useState<BenchmarkRunRecord[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [error, setError] = useState("");
 
-  const latestByModel = MOCK_HISTORY.reduce<Record<string, MockBenchmarkRun>>((acc, run) => {
+  useEffect(() => {
+    Promise.all([getModels(), getAllProfiles(), getBenchmarkHistory()])
+      .then(([tagsResp, profileData, historyData]) => {
+        setModels(tagsResp.models);
+        setProfiles(profileData);
+        setHistory(historyData);
+        if (profileData.length > 0) setSelectedProfileId(profileData[0].id);
+        if (tagsResp.models.length > 0) setSelectedModel(tagsResp.models[0].name);
+      })
+      .catch((e) => setError(`Failed to load: ${e}`));
+  }, []);
+
+  const latestByModel = history.reduce<Record<string, BenchmarkRunRecord>>((acc, run) => {
     if (!acc[run.model_name] || run.run_at > acc[run.model_name].run_at) {
       acc[run.model_name] = run;
     }
@@ -36,30 +52,28 @@ export function HomePage({ onNavigate }: HomePageProps) {
     <div className="page">
       <h1 className="page__title">Home</h1>
 
+      {error && <div className="text-[var(--danger)] mb-4 text-[0.875rem]">{error}</div>}
+
       <div className="grid grid-cols-2 gap-4 mb-4">
         <ActionCard
-          icon={
-            <FaUser />
-          }
+          icon={<FaUser />}
           title="Profile"
           description="Change benchmark profile."
           actions={
             <CustomSelect
-              options={MOCK_PROFILES.map((p) => ({ label: p.name, value: String(p.id) }))}
-              value={String(selectedProfileId)}
+              options={profiles.map((p) => ({ label: p.name, value: String(p.id) }))}
+              value={String(selectedProfileId ?? "")}
               onChange={(v) => setSelectedProfileId(Number(v))}
             />
           }
         />
         <ActionCard
-          icon={
-            <TbBoxModel />
-          }
+          icon={<TbBoxModel />}
           title="Models"
           description="Select a model to benchmark."
           actions={
             <CustomSelect
-              options={MOCK_MODELS.map((m) => ({ label: m.name, value: m.name }))}
+              options={models.map((m) => ({ label: m.name, value: m.name }))}
               value={selectedModel}
               onChange={setSelectedModel}
             />
@@ -69,9 +83,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
       <div className="mb-7">
         <ActionCard
-          icon={
-            <FaPlay />
-          }
+          icon={<FaPlay />}
           title="Benchmark"
           description="Run a benchmark."
           actions={

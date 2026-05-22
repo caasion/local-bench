@@ -1,9 +1,9 @@
 import { useState } from "react";
-import type { MockBenchmarkRun } from "./mockData";
+import type { BenchmarkRunRecord } from "./types";
 import { ResultCard } from "./ResultCard";
 
 interface ModelResultItemProps {
-  run: MockBenchmarkRun;
+  run: BenchmarkRunRecord;
   score: number;
   timeAgo: string;
 }
