@@ -1,37 +1,29 @@
 import type { MockBenchmarkRun } from "./mockData";
-import { formatTimeShort } from "./mockData";
+import { MOCK_MODELS, formatTimeShort } from "./mockData";
 
 interface ResultCardProps {
   run: MockBenchmarkRun;
   onClose?: () => void;
   compact?: boolean;
+  embedded?: boolean;
 }
 
-export function ResultCard({ run, onClose, compact }: ResultCardProps) {
-  const date = new Date(run.run_at);
-  const formattedDate = new Intl.DateTimeFormat('en-GB', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true
-  }).format(date);
+export function ResultCard({ run, onClose, compact, embedded }: ResultCardProps) {
+  const model = MOCK_MODELS.find((m) => m.name === run.model_name);
+
+  const scoreEntries = [
+    { label: "Speed", value: run.scores.throughput, max: 40 },
+    { label: "Fit", value: run.scores.vram, max: 25 },
+    { label: "Accuracy", value: run.scores.cpu, max: 25 },
+    { label: "Stability", value: run.scores.consistency, max: 10 },
+  ];
 
   return (
-    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-8 h-full">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8 pb-4">
-        <h2 className="text-[1.35rem] font-semibold text-[var(--text-primary)]">{run.model_name} Profile</h2>
-        <span className="text-[var(--text-muted)] text-[0.8rem]">{formattedDate}</span>
-      </div>
-
+    <div className={embedded ? "p-8" : "bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-8"}>
       <div className="grid grid-cols-2 gap-x-12 gap-y-10">
-        {/* Profile */}
+        {/* Profile Criteria */}
         <div>
-          <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-1">Profile</h3>
-          <p className="text-[0.75rem] text-[var(--text-muted)] mb-5">Profile criteria</p>
+          <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Profile Criteria</h3>
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center">
               <span className="text-[0.875rem] text-[var(--text-secondary)]">Maximum time until first token</span>
@@ -50,44 +42,27 @@ export function ResultCard({ run, onClose, compact }: ResultCardProps) {
 
         {/* Score Breakdown */}
         <div>
-          <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-1">Score Breakdown</h3>
-          <p className="text-[0.75rem] text-[var(--text-muted)] mb-5">Model score based on profile criteria</p>
+          <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Score Breakdown</h3>
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-[80px_1fr_45px] items-center gap-4">
-              <span className="text-[0.875rem] text-[var(--text-secondary)]">Speed</span>
-              <div className="h-2 bg-[var(--bg-surface)] rounded-full overflow-hidden">
-                <div className="h-full bg-[var(--accent)] rounded-full" style={{ width: '80%' }}></div>
-              </div>
-              <span className="text-right text-[0.75rem] text-[var(--text-secondary)]">32/40</span>
-            </div>
-            <div className="grid grid-cols-[80px_1fr_45px] items-center gap-4">
-              <span className="text-[0.875rem] text-[var(--text-secondary)]">Fit</span>
-              <div className="h-2 bg-[var(--bg-surface)] rounded-full overflow-hidden">
-                <div className="h-full bg-[var(--accent)] rounded-full" style={{ width: '52%' }}></div>
-              </div>
-              <span className="text-right text-[0.75rem] text-[var(--text-secondary)]">13/25</span>
-            </div>
-            <div className="grid grid-cols-[80px_1fr_45px] items-center gap-4">
-              <span className="text-[0.875rem] text-[var(--text-secondary)]">Accuracy</span>
-              <div className="h-2 bg-[var(--bg-surface)] rounded-full overflow-hidden">
-                <div className="h-full bg-[var(--accent)] rounded-full" style={{ width: '80%' }}></div>
-              </div>
-              <span className="text-right text-[0.75rem] text-[var(--text-secondary)]">20/25</span>
-            </div>
-            <div className="grid grid-cols-[80px_1fr_45px] items-center gap-4">
-              <span className="text-[0.875rem] text-[var(--text-secondary)]">Stability</span>
-              <div className="h-2 bg-[var(--bg-surface)] rounded-full overflow-hidden">
-                <div className="h-full bg-[var(--accent)] rounded-full" style={{ width: '90%' }}></div>
-              </div>
-              <span className="text-right text-[0.75rem] text-[var(--text-secondary)]">9/10</span>
-            </div>
+            {scoreEntries.map((entry) => {
+              const pct = Math.round((entry.value / 100) * 100);
+              const display = Math.round((entry.value / 100) * entry.max);
+              return (
+                <div key={entry.label} className="grid grid-cols-[80px_1fr_45px] items-center gap-4">
+                  <span className="text-[0.875rem] text-[var(--text-secondary)]">{entry.label}</span>
+                  <div className="h-2 bg-[var(--bg-surface)] rounded-full overflow-hidden">
+                    <div className="h-full bg-[var(--accent)] rounded-full" style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="text-right text-[0.75rem] text-[var(--text-secondary)]">{display}/{entry.max}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Details */}
+        {/* Result Details */}
         <div>
-          <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-1">Details</h3>
-          <p className="text-[0.75rem] text-[var(--text-muted)] mb-5">Benchmark result details</p>
+          <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Result Details</h3>
           <div className="grid grid-cols-2 gap-x-8 gap-y-4">
             <div className="flex justify-between items-center">
               <span className="text-[0.875rem] text-[var(--text-secondary)]">Tokens per second</span>
@@ -102,14 +77,9 @@ export function ResultCard({ run, onClose, compact }: ResultCardProps) {
               <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.total_tokens}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[0.875rem] text-[var(--text-secondary)]">Total tokens</span>
-              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.total_tokens}</span>
-            </div>
-            <div className="flex justify-between items-center">
               <span className="text-[0.875rem] text-[var(--text-secondary)]">VRam peak</span>
               <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.vram_peak_mb}</span>
             </div>
-            <div />
             <div className="flex justify-between items-center">
               <span className="text-[0.875rem] text-[var(--text-secondary)]">CPU peak %</span>
               <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.cpu_peak_percent.toFixed(1)}%</span>
@@ -119,8 +89,19 @@ export function ResultCard({ run, onClose, compact }: ResultCardProps) {
 
         {/* Model Details */}
         <div>
-          <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-1">Model Details</h3>
-          <p className="text-[0.75rem] text-[var(--text-muted)]">Huggingface data</p>
+          <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Model Details</h3>
+          <div className="flex flex-col gap-4">
+            {[
+              { key: "Family", value: model?.family ?? "N/A" },
+              { key: "Parameters", value: model?.parameters ?? "N/A" },
+              { key: "Quantization", value: model?.quantization ?? "N/A" },
+            ].map(({ key, value }) => (
+              <div key={key} className="flex justify-between items-center">
+                <span className="text-[0.875rem] text-[var(--text-secondary)]">{key}</span>
+                <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{value}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
