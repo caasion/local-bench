@@ -17,8 +17,8 @@
   --accent-hover: #c026d3;
   --accent-muted: rgba(217, 70, 239, 0.12);
   --text-primary: #eeeef0;
-  --text-secondary: #9494a8;
-  --text-muted: #5c5c72;
+  --text-secondary: #c2c2c2;
+  --text-muted: #8f8f8f;
   --border: #26263a;
   --border-light: #2e2e44;
   --danger: #ef4444;
@@ -115,10 +115,9 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-1);
-  padding: var(--space-2) var(--space-5);
   border-radius: var(--radius-sm);
   border: none;
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -126,10 +125,15 @@
   white-space: nowrap;
 }
 
+.btn {
+  @apply px-4 py-2;
+}
+
 .btn--primary {
   background: var(--accent);
-  color: #fff;
+  color: contrast-color(var(--accent));
 }
+
 .btn--primary:hover:not(:disabled) {
   background: var(--accent-hover);
 }
@@ -193,7 +197,7 @@
   padding: 9px var(--space-3);
   border-radius: var(--radius-sm);
   border: none;
-  background: var(--bg-input);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
   font-family: inherit;
   font-size: 0.875rem;
@@ -208,13 +212,6 @@
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 32px;
-}
-
-.selector-dropdown:focus,
-.form-input:focus,
-.settings-dropdown:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-muted);
 }
 
 .form-group {
