@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CustomSelect } from "./CustomSelect";
 
 interface Prompt {
   id: number;
@@ -90,33 +91,16 @@ export function PromptsManager() {
         />
       </div>
 
-      {/* Tag filters + Add Prompt button */}
-      <div className="flex items-center gap-2 mb-6 flex-wrap">
-        <button
-          className={[
-            "px-3 py-0.5 text-[0.8rem] rounded-[var(--radius-sm)] border font-medium transition-colors",
-            filterTag === "all"
-              ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-muted)]"
-              : "border-[var(--border)] text-[var(--text-secondary)] bg-[var(--bg-input)] hover:text-[var(--text-primary)]",
-          ].join(" ")}
-          onClick={() => setFilterTag("all")}
-        >
-          All ({prompts.length})
-        </button>
-        {uniqueTags.map((tag) => (
-          <button
-            key={tag}
-            className={[
-              "px-3 py-0.5 text-[0.8rem] rounded-[var(--radius-sm)] border font-medium transition-colors",
-              filterTag === tag
-                ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-muted)]"
-                : "border-[var(--border)] text-[var(--text-secondary)] bg-[var(--bg-input)] hover:text-[var(--text-primary)]",
-            ].join(" ")}
-            onClick={() => setFilterTag(tag)}
-          >
-            {tag}
-          </button>
-        ))}
+      {/* Tag filter dropdown + Add Prompt button */}
+      <div className="flex items-center gap-2 mb-6">
+        <CustomSelect
+          options={[
+            { label: `All (${prompts.length})`, value: "all" },
+            ...uniqueTags.map((tag) => ({ label: tag, value: tag })),
+          ]}
+          value={filterTag}
+          onChange={setFilterTag}
+        />
         <button
           className="btn btn--primary ml-auto"
           onClick={() => setCreating(true)}
@@ -173,7 +157,7 @@ export function PromptsManager() {
         {visible.map((p) => (
           <div key={p.id} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-4">
             <div className="flex items-start justify-between mb-3">
-              <span className="px-2.5 py-0.5 text-[0.75rem] font-medium rounded-[var(--radius-sm)] bg-[var(--accent-muted)] text-[var(--accent)] border border-[var(--accent-muted)]">
+              <span className="px-2.5 py-0.5 text-[0.75rem] font-medium rounded-[var(--radius-sm)] bg-[var(--accent-muted)] text-[var(--text-secondary)] border border-[var(--accent-muted)]">
                 {p.use_case_tag}
               </span>
               {editingId !== p.id && (

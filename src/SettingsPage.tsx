@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { MOCK_PROFILES } from "./mockData";
+import { CustomSelect } from "./CustomSelect";
 
 export function SettingsPage() {
   const [selectedProfile, setSelectedProfile] = useState<number>(MOCK_PROFILES[0].id);
+  const [iterations, setIterations] = useState("5");
   const [autoSave, setAutoSave] = useState(true);
 
   return (
@@ -18,15 +20,11 @@ export function SettingsPage() {
             </svg>
             <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">Default Profile</span>
           </div>
-          <select
-            className="settings-dropdown"
-            value={selectedProfile}
-            onChange={(e) => setSelectedProfile(Number(e.target.value))}
-          >
-            {MOCK_PROFILES.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+          <CustomSelect
+            options={MOCK_PROFILES.map((p) => ({ label: p.name, value: String(p.id) }))}
+            value={String(selectedProfile)}
+            onChange={(v) => setSelectedProfile(Number(v))}
+          />
         </div>
 
         <div className="flex items-center justify-between px-[18px] py-[14px] bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)]">
@@ -37,11 +35,15 @@ export function SettingsPage() {
             </svg>
             <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">Benchmark Iterations</span>
           </div>
-          <select className="settings-dropdown" defaultValue="5">
-            <option value="3">3 iterations</option>
-            <option value="5">5 iterations</option>
-            <option value="10">10 iterations</option>
-          </select>
+          <CustomSelect
+            options={[
+              { label: "3 iterations", value: "3" },
+              { label: "5 iterations", value: "5" },
+              { label: "10 iterations", value: "10" },
+            ]}
+            value={iterations}
+            onChange={setIterations}
+          />
         </div>
 
         <div className="flex items-center justify-between px-[18px] py-[14px] bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)]">

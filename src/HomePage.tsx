@@ -3,6 +3,7 @@ import { MOCK_MODELS, MOCK_PROFILES, MOCK_HISTORY } from "./mockData";
 import type { MockBenchmarkRun } from "./mockData";
 import { ActionCard } from "./ActionCard";
 import { ModelResultItem } from "./ModelResultItem";
+import { CustomSelect } from "./CustomSelect";
 
 interface HomePageProps {
   onNavigate: (view: string) => void;
@@ -53,15 +54,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
           title="Profile"
           description="Change benchmark profile."
           actions={
-            <select
-              className="selector-dropdown"
-              value={selectedProfileId}
-              onChange={(e) => setSelectedProfileId(Number(e.target.value))}
-            >
-              {MOCK_PROFILES.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            <CustomSelect
+              options={MOCK_PROFILES.map((p) => ({ label: p.name, value: String(p.id) }))}
+              value={String(selectedProfileId)}
+              onChange={(v) => setSelectedProfileId(Number(v))}
+            />
           }
         />
         <ActionCard
@@ -74,15 +71,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
           title="Models"
           description="Select a model to benchmark."
           actions={
-            <select
-              className="selector-dropdown"
+            <CustomSelect
+              options={MOCK_MODELS.map((m) => ({ label: m.name, value: m.name }))}
               value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-            >
-              {MOCK_MODELS.map((m) => (
-                <option key={m.name} value={m.name}>{m.name}</option>
-              ))}
-            </select>
+              onChange={setSelectedModel}
+            />
           }
         />
       </div>

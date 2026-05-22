@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MOCK_MODELS, MOCK_PROFILES, MOCK_PROMPTS } from "./mockData";
 import { ActionCard } from "./ActionCard";
+import { CustomSelect } from "./CustomSelect";
 
 export function BenchmarkPage() {
   const [selectedProfileId, setSelectedProfileId] = useState<number>(MOCK_PROFILES[0].id);
@@ -56,17 +57,12 @@ export function BenchmarkPage() {
                 <div className="text-[0.75rem] text-[var(--text-secondary)]">Change benchmark profile.</div>
               </div>
             </div>
-            <select
-              className="selector-dropdown"
-              style={{ width: "auto", minWidth: 140 }}
-              value={selectedProfileId}
-              onChange={(e) => setSelectedProfileId(Number(e.target.value))}
+            <CustomSelect
+              options={MOCK_PROFILES.map((p) => ({ label: p.name, value: String(p.id) }))}
+              value={String(selectedProfileId)}
+              onChange={(v) => setSelectedProfileId(Number(v))}
               disabled={isRunning}
-            >
-              {MOCK_PROFILES.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            />
           </div>
 
           <div className="flex flex-col gap-2 mb-6">
