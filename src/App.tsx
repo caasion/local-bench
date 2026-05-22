@@ -1,358 +1,130 @@
-import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { useState } from "react";
 import "./App.css";
+import { HomePage } from "./HomePage";
+import { BenchmarkPage } from "./BenchmarkPage";
+import { HistoryPage } from "./HistoryPage";
+import { ProfilesPage } from "./ProfilesPage";
+import { SettingsPage } from "./SettingsPage";
 import { PromptsManager } from "./PromptsManager";
-import { BenchmarkHistory } from "./BenchmarkHistory";
-import { ProfilesManager } from "./ProfilesManager";
 
-interface Model {
-  name: string;
-  model: string;
-  size: number;
+type View = "home" | "benchmark" | "prompts" | "history" | "profiles" | "settings";
+
+const NAV_ITEMS: { id: View; label: string; icon: React.ReactNode }[] = [
+  {
+    id: "home",
+    label: "Home",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+    ),
+  },
+  {
+    id: "benchmark",
+    label: "Benchmark",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M3 3v18h18" />
+        <path d="M7 16l4-8 4 4 4-8" />
+      </svg>
+    ),
+  },
+  {
+    id: "prompts",
+    label: "Prompts",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="16" y1="13" x2="8" y2="13" />
+        <line x1="16" y1="17" x2="8" y2="17" />
+      </svg>
+    ),
+  },
+  {
+    id: "profiles",
+    label: "Profiles",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    ),
+  },
+  {
+    id: "history",
+    label: "History",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    ),
+  },
+];
+
+const SETTINGS_NAV = {
+  id: "settings" as View,
+  label: "Settings",
+  icon: (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+    </svg>
+  ),
+};
+
+function NavItem({ item, isActive, onClick }: { item: typeof NAV_ITEMS[0]; isActive: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={[
+        "relative w-full min-h-[52px] flex flex-col items-center justify-center gap-1 px-1 py-2 my-1",
+        "border-0 font-[inherit] cursor-pointer transition-all duration-150",
+        isActive
+          ? "bg-[var(--bg-base)] text-[var(--accent)] hover:bg-[rgba(217,70,239,0.2)]"
+          : "bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]",
+        isActive
+          ? "before:content-[''] before:absolute before:left-0 before:top-[20%] before:h-[60%] before:w-[3px] before:bg-[var(--accent)] before:rounded-r"
+          : "",
+      ].join(" ")}
+    >
+      {item.icon}
+      {!isActive && (
+        <span className="text-[0.8rem] font-medium tracking-[0.01em] leading-none">
+          {item.label}
+        </span>
+      )}
+    </button>
+  );
 }
-
-interface Profile {
-  id: number;
-  name: string;
-  use_case_tag: string;
-}
-
-interface LibraryPrompt {
-  id: number;
-  use_case_tag: string;
-  content: string;
-}
-
-interface PromptResult {
-  prompt: string;
-  tokens_per_second_mean: number;
-  tokens_per_second_std_dev: number;
-  ttft_ns_mean: number;
-  ttft_ns_std_dev: number;
-  total_time_ns_mean: number;
-  total_time_ns_std_dev: number;
-  total_tokens: number;
-}
-
-interface BenchmarkResult {
-  model: string;
-  likely_ram_spillover: boolean;
-  tokens_per_second: number;
-  total_tokens: number;
-  vram_peak_mb: number;
-  cpu_peak_percent: number;
-  tokens_per_second_mean: number;
-  tokens_per_second_std_dev: number;
-  ttft_ns_mean: number;
-  ttft_ns_std_dev: number;
-  total_time_ns_mean: number;
-  total_time_ns_std_dev: number;
-  per_prompt: PromptResult[];
-}
-
-const DEFAULT_PROMPT = "hello. how is the weather today? It seems quite bad in my eyes, but I'm not sure if it is actually that bad.";
 
 function App() {
-  const [view, setView] = useState<"benchmark" | "prompts" | "history" | "profiles">("benchmark");
-  const [models, setModels] = useState<Model[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string>("");
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
-  const [prompts, setPrompts] = useState<string[]>([DEFAULT_PROMPT]);
-  const [isRunning, setIsRunning] = useState(false);
-  const [result, setResult] = useState<BenchmarkResult | null>(null);
-  const [error, setError] = useState<string>("");
-  const [expandedPrompts, setExpandedPrompts] = useState<Set<number>>(new Set());
-  const [numCtx, setNumCtx] = useState(2048);
-
-  useEffect(() => {
-    const loadModels = async () => {
-      try {
-        const modelList = await invoke<Model[]>("get_models");
-        setModels(modelList);
-        if (modelList.length > 0) setSelectedModel(modelList[0].name);
-      } catch (err) {
-        setError(`Failed to load models: ${err}`);
-      }
-    };
-
-    const loadProfiles = async () => {
-      try {
-        const data = await invoke<Profile[]>("get_all_profiles");
-        setProfiles(data);
-      } catch (err) {
-        setError(`Failed to load profiles: ${err}`);
-      }
-    };
-
-    loadModels();
-    loadProfiles();
-  }, []);
-
-  const handleProfileChange = async (profileId: number) => {
-    setSelectedProfileId(profileId);
-    const profile = profiles.find((p) => p.id === profileId);
-    if (!profile) return;
-    try {
-      const data = await invoke<LibraryPrompt[]>("get_prompt_by_use_case", { useCaseTag: profile.use_case_tag });
-      setPrompts(data.map((p) => p.content));
-    } catch (err) {
-      setError(`Failed to load prompts for profile: ${err}`);
-    }
-  };
-
-  const runBenchmark = async () => {
-    if (!selectedModel) {
-      setError("Please select a model");
-      return;
-    }
-
-    setIsRunning(true);
-    setError("");
-    setResult(null);
-    setExpandedPrompts(new Set());
-
-    try {
-      const testResult = await invoke<BenchmarkResult>("benchmark", {
-        input: { model: selectedModel, num_ctx: numCtx, prompts, times: 5 },
-      });
-
-      setResult(testResult);
-    } catch (err) {
-      setError(`Benchmark failed: ${err}`);
-    } finally {
-      setIsRunning(false);
-    }
-  };
-
-  const addPrompt = () => setPrompts((prev) => [...prev, ""]);
-
-  const removePrompt = (i: number) =>
-    setPrompts((prev) => prev.filter((_, idx) => idx !== i));
-
-  const updatePrompt = (i: number, value: string) =>
-    setPrompts((prev) => prev.map((p, idx) => (idx === i ? value : p)));
-
-  const togglePromptExpand = (i: number) =>
-    setExpandedPrompts((prev) => {
-      const next = new Set(prev);
-      if (next.has(i)) next.delete(i);
-      else next.add(i);
-      return next;
-    });
-
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return "0 B";
-    const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
-  };
-
-  const formatTime = (ns: number) => {
-    const ms = ns / 1e6;
-    return ms.toFixed(2) + " ms";
-  };
-
-  const statRow = (label: string, mean: number, std: number, fmt: (n: number) => string) => (
-    <div className="result-item" title={`Mean: ${fmt(mean)}  ±  ${fmt(std)} std dev`}>
-      <span className="label">{label}:</span>
-      <span className="value">{fmt(mean)} <span className="std-dev">± {fmt(std)}</span></span>
-    </div>
-  );
+  const [view, setView] = useState<View>("home");
 
   return (
-    <>
-      <nav className="app-nav">
-        <button
-          className={`nav-tab${view === "benchmark" ? " active" : ""}`}
-          onClick={() => setView("benchmark")}
-        >
-          Benchmark
-        </button>
-        <button
-          className={`nav-tab${view === "prompts" ? " active" : ""}`}
-          onClick={() => setView("prompts")}
-        >
-          Prompts Library
-        </button>
-        <button
-          className={`nav-tab${view === "history" ? " active" : ""}`}
-          onClick={() => setView("history")}
-        >
-          History
-        </button>
-        <button
-          className={`nav-tab${view === "profiles" ? " active" : ""}`}
-          onClick={() => setView("profiles")}
-        >
-          Profiles
-        </button>
-      </nav>
-      {view === "prompts" ? <PromptsManager /> : null}
-      {view === "history" ? <BenchmarkHistory /> : null}
-      {view === "profiles" ? <ProfilesManager /> : null}
-      {view === "benchmark" ? <main className="container">
-      <h1>Model Benchmark</h1>
-
-      <div className="benchmark-form">
-        <div className="form-group">
-          <label htmlFor="profile-select">Profile:</label>
-          <select
-            id="profile-select"
-            value={selectedProfileId ?? ""}
-            onChange={(e) => handleProfileChange(Number(e.target.value))}
-            disabled={isRunning}
-          >
-            <option value="" disabled>Select a profile...</option>
-            {profiles.map((p) => (
-              <option key={p.id} value={p.id}>{p.name} ({p.use_case_tag})</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="model-select">Model:</label>
-          <select
-            id="model-select"
-            value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value)}
-            disabled={isRunning}
-          >
-            {models.map((model) => (
-              <option key={model.name} value={model.name}>
-                {model.name} ({formatBytes(model.size)})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="num-ctx-slider">Context Window: {numCtx.toLocaleString()}</label>
-          <input
-            id="num-ctx-slider"
-            type="range"
-            min={256}
-            max={131072}
-            step={256}
-            value={numCtx}
-            onChange={(e) => setNumCtx(Number(e.target.value))}
-            disabled={isRunning}
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Prompts:</label>
-          {prompts.map((p, i) => (
-            <div key={i} className="prompt-row">
-              <textarea
-                value={p}
-                onChange={(e) => updatePrompt(i, e.target.value)}
-                disabled={isRunning}
-                rows={3}
-                placeholder={`Prompt ${i + 1}`}
-              />
-              <div className="prompt-row-actions">
-                <button
-                  onClick={() => updatePrompt(i, DEFAULT_PROMPT)}
-                  disabled={isRunning}
-                  className="secondary-btn"
-                >
-                  Reset
-                </button>
-                {prompts.length > 1 && (
-                  <button
-                    onClick={() => removePrompt(i)}
-                    disabled={isRunning}
-                    className="secondary-btn danger-btn"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-            </div>
+    <div className="app-layout">
+      <nav className="app-sidebar">
+        <div className="flex flex-col gap-0.5 flex-1">
+          {NAV_ITEMS.map((item) => (
+            <NavItem key={item.id} item={item} isActive={view === item.id} onClick={() => setView(item.id)} />
           ))}
-          <button onClick={addPrompt} disabled={isRunning} className="secondary-btn">
-            + Add Prompt
-          </button>
         </div>
-
-        <button
-          onClick={runBenchmark}
-          disabled={isRunning || !selectedModel || selectedProfileId === null}
-          className="primary-btn"
-        >
-          {isRunning ? "Running Benchmark..." : "Run Benchmark"}
-        </button>
-      </div>
-
-      {error && <div className="error">{error}</div>}
-
-      {result && (
-        <div className="results">
-          <h2>Results for {result.model}</h2>
-
-          <h3>Overall ({result.per_prompt.length} prompt{result.per_prompt.length !== 1 ? "s" : ""}, 5 iterations each)</h3>
-          <div className="result-grid">
-            {statRow("TTFT", result.ttft_ns_mean, result.ttft_ns_std_dev, formatTime)}
-            {statRow("Throughput", result.tokens_per_second_mean, result.tokens_per_second_std_dev, (n) => n.toFixed(2) + " tok/s")}
-            {statRow("Total Time", result.total_time_ns_mean, result.total_time_ns_std_dev, formatTime)}
-            <div className="result-item">
-              <span className="label">Total Tokens:</span>
-              <span className="value">{result.total_tokens}</span>
-            </div>
-            <div className="result-item">
-              <span className="label">VRAM Peak:</span>
-              <span className="value">{result.vram_peak_mb} MB</span>
-            </div>
-            <div className="result-item">
-              <span className="label">CPU Peak:</span>
-              <span className="value">{result.cpu_peak_percent.toFixed(1)}%</span>
-            </div>
-            <div className="result-item">
-              <span className="label">RAM Spillover:</span>
-              <span className={`value ${result.likely_ram_spillover ? "spillover-warning" : "spillover-ok"}`}>
-                {result.likely_ram_spillover ? "Likely" : "Unlikely"}
-              </span>
-            </div>
-          </div>
-
-          {result.per_prompt.length > 1 && (
-            <>
-              <h3>Per Prompt</h3>
-              {result.per_prompt.map((pr: PromptResult, i: number) => (
-                <div key={i} className="prompt-result">
-                  <button
-                    className="prompt-result-header"
-                    onClick={() => togglePromptExpand(i)}
-                  >
-                    <span className="prompt-label">
-                      Prompt {i + 1}: <em>{pr.prompt.length > 80 ? pr.prompt.slice(0, 80) + "…" : pr.prompt}</em>
-                    </span>
-                    <span className="prompt-summary">
-                      {pr.tokens_per_second_mean.toFixed(1)} tok/s · {formatTime(pr.ttft_ns_mean)} TTFT
-                    </span>
-                    <span className="expand-icon">{expandedPrompts.has(i) ? "▲" : "▼"}</span>
-                  </button>
-                  {expandedPrompts.has(i) && (
-                    <div className="result-grid prompt-result-body">
-                      {statRow("TTFT", pr.ttft_ns_mean, pr.ttft_ns_std_dev, formatTime)}
-                      {statRow("Throughput", pr.tokens_per_second_mean, pr.tokens_per_second_std_dev, (n) => n.toFixed(2) + " tok/s")}
-                      {statRow("Total Time", pr.total_time_ns_mean, pr.total_time_ns_std_dev, formatTime)}
-                      <div className="result-item">
-                        <span className="label">Total Tokens:</span>
-                        <span className="value">{pr.total_tokens}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </>
-          )}
+        <div className="mt-auto">
+          <NavItem item={SETTINGS_NAV} isActive={view === "settings"} onClick={() => setView("settings")} />
         </div>
-      )}
-      </main> : null}
-    </>
+      </nav>
+
+      <main className="app-main">
+        {view === "home" && <HomePage onNavigate={(v) => setView(v as View)} />}
+        {view === "benchmark" && <BenchmarkPage />}
+        {view === "prompts" && <PromptsManager />}
+        {view === "history" && <HistoryPage />}
+        {view === "profiles" && <ProfilesPage />}
+        {view === "settings" && <SettingsPage />}
+      </main>
+    </div>
   );
 }
 

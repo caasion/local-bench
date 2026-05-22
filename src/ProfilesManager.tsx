@@ -101,17 +101,18 @@ export function ProfilesManager() {
   };
 
   return (
-    <main className="container prompts-container">
-      <h1>Profiles</h1>
+    <div className="page">
+      <h1 className="page__title">Profiles</h1>
 
-      {error && <div className="error">{error}</div>}
+      {error && <div className="text-[var(--danger)] mb-4 text-[0.875rem]">{error}</div>}
 
       {creating ? (
-        <div className="prompt-form-card">
-          <h3>New Profile</h3>
+        <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-5 mb-4">
+          <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-4">New Profile</h3>
           <div className="form-group">
-            <label>Name</label>
+            <label className="form-label">Name</label>
             <input
+              className="form-input"
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
@@ -120,38 +121,41 @@ export function ProfilesManager() {
             />
           </div>
           <div className="form-group">
-            <label>Use Case Tag</label>
+            <label className="form-label">Use Case Tag</label>
             <input
+              className="form-input"
               type="text"
               value={newUseCaseTag}
               onChange={(e) => setNewUseCaseTag(e.target.value)}
               placeholder="e.g. coding, reasoning, chat..."
             />
           </div>
-          <div className="form-actions">
-            <button className="primary-btn action-btn" onClick={handleCreate}>Save</button>
-            <button className="secondary-btn action-btn" onClick={() => { setCreating(false); setError(""); }}>Cancel</button>
+          <div className="flex gap-2 mt-2">
+            <button className="btn btn--primary btn--sm" onClick={handleCreate}>Save</button>
+            <button className="btn btn--ghost btn--sm" onClick={() => { setCreating(false); setError(""); }}>Cancel</button>
           </div>
         </div>
       ) : (
-        <button className="primary-btn action-btn new-prompt-btn" onClick={() => setCreating(true)}>
+        <button className="btn btn--primary mb-4" onClick={() => setCreating(true)}>
           + New Profile
         </button>
       )}
 
-      <div className="prompts-list">
+      <div className="flex flex-col gap-2">
         {profiles.length === 0 && (
           <p className="empty-state">No profiles yet.</p>
         )}
         {profiles.map((p) => (
-          <div key={p.id} className="prompt-card">
-            <div className="prompt-card-header">
-              <span className="prompt-tag-badge">{p.use_case_tag}</span>
-              <div className="prompt-card-actions">
+          <div key={p.id} className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="px-2.5 py-0.5 text-[0.75rem] font-medium rounded-[var(--radius-sm)] bg-[var(--accent-muted)] text-[var(--accent)]">
+                {p.use_case_tag}
+              </span>
+              <div className="flex gap-2">
                 {editingId !== p.id && (
                   <>
-                    <button className="secondary-btn action-btn" onClick={() => startEdit(p)}>Edit</button>
-                    <button className="secondary-btn action-btn danger-btn" onClick={() => handleDelete(p.id)}>Delete</button>
+                    <button className="btn btn--ghost btn--sm" onClick={() => startEdit(p)}>Edit</button>
+                    <button className="btn btn--danger btn--sm" onClick={() => handleDelete(p.id)}>Delete</button>
                   </>
                 )}
               </div>
@@ -160,39 +164,39 @@ export function ProfilesManager() {
             {editingId === p.id && editDraft ? (
               <>
                 <div className="form-group">
-                  <label>Name</label>
-                  <input type="text" value={editDraft.name} onChange={(e) => patchDraft("name", e.target.value)} autoFocus />
+                  <label className="form-label">Name</label>
+                  <input className="form-input" type="text" value={editDraft.name} onChange={(e) => patchDraft("name", e.target.value)} autoFocus />
                 </div>
                 <div className="form-group">
-                  <label>Description</label>
-                  <input type="text" value={editDraft.description ?? ""} onChange={(e) => patchDraft("description", e.target.value)} placeholder="Optional" />
+                  <label className="form-label">Description</label>
+                  <input className="form-input" type="text" value={editDraft.description ?? ""} onChange={(e) => patchDraft("description", e.target.value)} placeholder="Optional" />
                 </div>
                 <div className="form-group">
-                  <label>Use Case Tag</label>
-                  <input type="text" value={editDraft.use_case_tag} onChange={(e) => patchDraft("use_case_tag", e.target.value)} />
+                  <label className="form-label">Use Case Tag</label>
+                  <input className="form-input" type="text" value={editDraft.use_case_tag} onChange={(e) => patchDraft("use_case_tag", e.target.value)} />
                 </div>
                 <div className="form-group">
-                  <label>Max TTFT (seconds)</label>
-                  <input type="number" value={editDraft.max_ttft_seconds ?? ""} onChange={(e) => patchDraft("max_ttft_seconds", e.target.value)} placeholder="Optional" />
+                  <label className="form-label">Max TTFT (seconds)</label>
+                  <input className="form-input" type="number" value={editDraft.max_ttft_seconds ?? ""} onChange={(e) => patchDraft("max_ttft_seconds", e.target.value)} placeholder="Optional" />
                 </div>
                 <div className="form-group">
-                  <label>Min Context Window</label>
-                  <input type="number" value={editDraft.min_context_window ?? ""} onChange={(e) => patchDraft("min_context_window", e.target.value)} placeholder="Optional" />
+                  <label className="form-label">Min Context Window</label>
+                  <input className="form-input" type="number" value={editDraft.min_context_window ?? ""} onChange={(e) => patchDraft("min_context_window", e.target.value)} placeholder="Optional" />
                 </div>
                 <div className="form-group">
-                  <label>Accuracy Weight</label>
-                  <input type="number" value={editDraft.accuracy_weight ?? ""} onChange={(e) => patchDraft("accuracy_weight", e.target.value)} placeholder="Optional" />
+                  <label className="form-label">Accuracy Weight</label>
+                  <input className="form-input" type="number" value={editDraft.accuracy_weight ?? ""} onChange={(e) => patchDraft("accuracy_weight", e.target.value)} placeholder="Optional" />
                 </div>
-                <div className="form-actions">
-                  <button className="primary-btn action-btn" onClick={saveEdit}>Save</button>
-                  <button className="secondary-btn action-btn" onClick={cancelEdit}>Cancel</button>
+                <div className="flex gap-2 mt-2">
+                  <button className="btn btn--primary btn--sm" onClick={saveEdit}>Save</button>
+                  <button className="btn btn--ghost btn--sm" onClick={cancelEdit}>Cancel</button>
                 </div>
               </>
             ) : (
-              <div className="prompt-content">
-                <strong>{p.name}</strong>
-                {p.description && <p>{p.description}</p>}
-                <p>
+              <div>
+                <p className="text-[0.875rem] font-semibold text-[var(--text-primary)] mb-1">{p.name}</p>
+                {p.description && <p className="text-[0.8rem] text-[var(--text-secondary)] mb-1">{p.description}</p>}
+                <p className="text-[0.75rem] text-[var(--text-muted)]">
                   {[
                     p.max_ttft_seconds != null && `Max TTFT: ${p.max_ttft_seconds}s`,
                     p.min_context_window != null && `Min ctx: ${p.min_context_window}`,
@@ -204,6 +208,6 @@ export function ProfilesManager() {
           </div>
         ))}
       </div>
-    </main>
+    </div>
   );
 }
