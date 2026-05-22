@@ -13,12 +13,7 @@ export function HistoryItem({ run, isActive, onClick, onDelete }: HistoryItemPro
   );
   return (
     <div
-      className={[
-        "group bg-white/10 border rounded-[var(--radius-sm)] px-6 py-5 cursor-pointer transition-all duration-150",
-        isActive
-          ? "border-[var(--accent)] bg-[var(--accent-muted)]"
-          : "border-[var(--border)] hover:bg-white/15",
-      ].join(" ")}
+      className={`group border rounded-[var(--radius-sm)] px-6 py-5 cursor-pointer transition-all duration-150 ${isActive ? 'bg-accent/20 hover:bg-accent/25 border-accent' : 'bg-white/10 hover:bg-white/15 border-border'}`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
