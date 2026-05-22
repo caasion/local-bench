@@ -17,7 +17,7 @@
   --accent-hover: #c026d3;
   --accent-muted: rgba(217, 70, 239, 0.12);
   --text-primary: #eeeef0;
-  --text-secondary: #c2c2c2;
+  --text-secondary: #cccccc;
   --text-muted: #8f8f8f;
   --border: #26263a;
   --border-light: #2e2e44;
@@ -375,8 +375,8 @@
   width: 100%;
   padding: 7px var(--space-3);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--bg-input);
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
   font-family: inherit;
   font-size: 0.85rem;
@@ -387,10 +387,11 @@
 
 .custom-select__trigger:hover {
   border-color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .custom-select__arrow {
-  color: var(--text-muted);
+  color: var(--text-secondary);
   transition: transform 0.2s ease;
   flex-shrink: 0;
 }

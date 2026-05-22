@@ -19,10 +19,10 @@ export function ResultCard({ run, onClose, compact, embedded }: ResultCardProps)
   ];
 
   return (
-    <div className={embedded ? "p-8" : "bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-8"}>
-      <div className="grid grid-cols-2 gap-x-12 gap-y-10">
+    <div className={embedded ? "p-4" : "bg-[var(--bg-card)] border border-[var(--border)] rounded-[var(--radius-md)] p-4"}>
+      <div className="grid grid-cols-2 gap-x-8 gap-y-4">
         {/* Model Details */}
-        <div>
+        <div className="bg-white/10 p-4 rounded-md">
           <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Model Details</h3>
           <div className="flex flex-col gap-2">
             {[
@@ -39,7 +39,7 @@ export function ResultCard({ run, onClose, compact, embedded }: ResultCardProps)
         </div>
 
         {/* Score Breakdown */}
-        <div>
+        <div className="bg-white/10 p-4 rounded-md">
           <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Score Breakdown</h3>
           <div className="flex flex-col gap-2">
             {scoreEntries.map((entry) => {
@@ -59,7 +59,7 @@ export function ResultCard({ run, onClose, compact, embedded }: ResultCardProps)
         </div>
 
         {/* Profile Criteria */}
-        <div>
+        <div className="bg-white/10 p-4 rounded-md">
           <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Profile Criteria</h3>
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
@@ -78,7 +78,7 @@ export function ResultCard({ run, onClose, compact, embedded }: ResultCardProps)
         </div>
 
         {/* Result Details */}
-        <div>
+        <div className="bg-white/10 p-4 rounded-md">
           <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Result Details</h3>
           <div className="grid grid-cols-2 gap-x-8 gap-y-2">
             <div className="flex justify-between items-center">
