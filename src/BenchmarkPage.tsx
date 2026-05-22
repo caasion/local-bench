@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MOCK_MODELS, MOCK_PROFILES, MOCK_PROMPTS } from "./mockData";
+import { ActionCard } from "./ActionCard";
 
 export function BenchmarkPage() {
   const [selectedProfileId, setSelectedProfileId] = useState<number>(MOCK_PROFILES[0].id);
@@ -68,7 +69,7 @@ export function BenchmarkPage() {
             </select>
           </div>
 
-          <div className="flex flex-col gap-3 mb-6">
+          <div className="flex flex-col gap-2 mb-6">
             <ProfileRow
               label="Maximum time until first token"
               value={selectedProfile.max_ttft_seconds != null ? `${selectedProfile.max_ttft_seconds}s` : "—"}
@@ -142,41 +143,49 @@ export function BenchmarkPage() {
       <h2 className="section-heading">Details</h2>
 
       <div className="flex flex-col gap-2 mb-6">
-        {/* Benchmark Status */}
-        <div className="flex items-center justify-between px-5 py-4 bg-[var(--bg-card)] rounded-[var(--radius-md)]">
-          <div>
-            <div className="text-[1.125rem] font-semibold text-[var(--text-primary)]">Benchmark Status</div>
-            <div className="text-[0.75rem] text-[var(--text-secondary)] mt-0.5">Last benchmarked: 2 hours ago</div>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <span className={[
-              "w-4 h-4 rounded-full flex-shrink-0",
-              isRunning ? "bg-[var(--success)]" : "bg-[var(--danger)]",
-            ].join(" ")} />
-            <span className="text-[1.125rem] font-medium text-[var(--text-primary)]">
-              {isRunning ? "Running" : "Inactive"}
-            </span>
-          </div>
-        </div>
+        <ActionCard
+          icon={<></>}
+          title="Benchmark Status"
+          description="Last benchmarked: 2 hours ago"
+          actions={
+            <div>
+              <span className={[
+                "w-4 h-4 rounded-full flex-shrink-0",
+                isRunning ? "bg-[var(--success)]" : "bg-[var(--danger)]",
+              ].join(" ")} />
+              <span className="text-[1.125rem] font-medium text-[var(--text-primary)]">
+                {isRunning ? "Running" : "Inactive"}
+              </span>
+            </div>
 
-        {/* Active Prompt */}
-        <div className="flex items-center justify-between px-5 py-4 bg-[var(--bg-card)] rounded-[var(--radius-md)]">
-          <div>
-            <div className="text-[1.125rem] font-semibold text-[var(--text-primary)]">Active Prompt</div>
-            <div className="text-[0.75rem] text-[var(--text-secondary)] mt-0.5">Currently active prompt that is being used for benchmarking</div>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <span className="text-[1.125rem] font-medium text-[var(--text-primary)]">
-              Prompt 1/{profilePrompts.length || 1}
-            </span>
-            <button className="w-9 h-9 rounded-[8px] bg-[#555555] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex-shrink-0">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 16v-4m0-4h.01" />
-              </svg>
-            </button>
-          </div>
-        </div>
+            
+          }
+        />
+
+        <ActionCard
+          icon={
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <path d="M14 2v6h6" />
+              <path d="M16 13H8m8 4H8m2-8H8" />
+            </svg>
+          }
+          title="Active Prompt"
+          description="Currently active prompt that is being used for benchmarking"
+          actions={
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-[1.125rem] font-medium text-[var(--text-primary)]">
+                Prompt 1/{profilePrompts.length || 1}
+              </span>
+              <button className="w-9 h-9 rounded-[8px] bg-[#555555] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors flex-shrink-0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 16v-4m0-4h.01" />
+                </svg>
+              </button>
+            </div>
+          }
+        />
       </div>
 
       {/* Metric cards - top row */}
@@ -198,9 +207,9 @@ export function BenchmarkPage() {
 
 function ProfileRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between text-[0.875rem]">
-      <span className="text-[var(--text-primary)]">{label}</span>
-      <span className="text-[var(--text-primary)] font-medium">{value}</span>
+    <div className="flex justify-between items-center">
+      <span className="text-[0.875rem] text-[var(--text-secondary)]">{label}</span>
+      <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{value}</span>
     </div>
   );
 }
