@@ -152,10 +152,6 @@ export function ProfilesPage() {
             </div>
           )}
         </div>
-
-        <div className="max-h-[calc(100vh-140px)] overflow-y-auto">
-          {latestRun && <ResultCard run={latestRun} compact />}
-        </div>
       </div>
     </div>
   );
