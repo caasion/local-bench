@@ -46,7 +46,7 @@ export function BenchmarkPage() {
       {/* Profile + Models cards */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         {/* Profile card */}
-        <div className="bg-[var(--bg-card)] rounded-[var(--radius-md)] overflow-hidden p-5">
+        <div className="bg-[var(--bg-card)] rounded-sm overflow-hidden p-5">
           <div className="flex items-start justify-between mb-5">
             <div className="flex items-center gap-3">
               <svg width="36" height="36" viewBox="0 0 36 36" fill="white" xmlns="http://www.w3.org/2000/svg">
@@ -54,7 +54,7 @@ export function BenchmarkPage() {
               </svg>
               <div>
                 <div className="text-[1.125rem] font-semibold text-[var(--text-primary)]">Profile</div>
-                <div className="text-[0.75rem] text-[var(--text-secondary)]">Change benchmark profile.</div>
+                <div className="text-[0.8rem] text-[var(--text-secondary)] font-normal">Change benchmark profile.</div>
               </div>
             </div>
             <CustomSelect
