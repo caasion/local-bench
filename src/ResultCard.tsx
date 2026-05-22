@@ -1,21 +1,21 @@
-import type { MockBenchmarkRun } from "./mockData";
-import { MOCK_MODELS, formatTimeShort } from "./mockData";
+import type { BenchmarkRunRecord, Model, Profile } from "./types";
+import { computeScores, formatTimeShort } from "./utils";
 
 interface ResultCardProps {
-  run: MockBenchmarkRun;
-  onClose?: () => void;
-  compact?: boolean;
+  run: BenchmarkRunRecord;
+  model?: Model;
+  profile?: Profile;
   embedded?: boolean;
 }
 
-export function ResultCard({ run, onClose, compact, embedded }: ResultCardProps) {
-  const model = MOCK_MODELS.find((m) => m.name === run.model_name);
+export function ResultCard({ run, model, profile, embedded }: ResultCardProps) {
+  const scores = computeScores(run);
 
   const scoreEntries = [
-    { label: "Speed", value: run.scores.throughput, max: 40 },
-    { label: "Fit", value: run.scores.vram, max: 25 },
-    { label: "Accuracy", value: run.scores.cpu, max: 25 },
-    { label: "Stability", value: run.scores.consistency, max: 10 },
+    { label: "Speed", value: scores.throughput, max: 40 },
+    { label: "Fit", value: scores.vram, max: 25 },
+    { label: "Accuracy", value: scores.cpu, max: 25 },
+    { label: "Stability", value: scores.consistency, max: 10 },
   ];
 
   return (
@@ -26,9 +26,9 @@ export function ResultCard({ run, onClose, compact, embedded }: ResultCardProps)
           <h3 className="text-[1rem] font-semibold text-[var(--text-primary)] mb-5">Model Details</h3>
           <div className="flex flex-col gap-2">
             {[
-              { key: "Family", value: model?.family ?? "N/A" },
-              { key: "Parameters", value: model?.parameters ?? "N/A" },
-              { key: "Quantization", value: model?.quantization ?? "N/A" },
+              { key: "Family", value: model?.details.family ?? "N/A" },
+              { key: "Parameters", value: model?.details.parameter_size ?? "N/A" },
+              { key: "Quantization", value: model?.details.quantization_level ?? "N/A" },
             ].map(({ key, value }) => (
               <div key={key} className="flex justify-between items-center">
                 <span className="text-[0.875rem] text-[var(--text-secondary)]">{key}</span>
@@ -64,15 +64,21 @@ export function ResultCard({ run, onClose, compact, embedded }: ResultCardProps)
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
               <span className="text-[0.875rem] text-[var(--text-secondary)]">Maximum time until first token</span>
-              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">10s</span>
+              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">
+                {profile?.max_ttft_seconds != null ? `${profile.max_ttft_seconds}s` : "—"}
+              </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-[0.875rem] text-[var(--text-secondary)]">Minimum context window</span>
-              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">4096</span>
+              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">
+                {profile?.min_context_window?.toLocaleString() ?? "—"}
+              </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[0.875rem] text-[var(--text-secondary)]">Test Thinking</span>
-              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">yes</span>
+              <span className="text-[0.875rem] text-[var(--text-secondary)]">Accuracy weight</span>
+              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">
+                {profile?.accuracy_weight ?? "—"}
+              </span>
             </div>
           </div>
         </div>
@@ -94,8 +100,8 @@ export function ResultCard({ run, onClose, compact, embedded }: ResultCardProps)
               <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.total_tokens}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[0.875rem] text-[var(--text-secondary)]">VRam peak</span>
-              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.vram_peak_mb}</span>
+              <span className="text-[0.875rem] text-[var(--text-secondary)]">VRAM peak</span>
+              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.vram_peak_mb} MB</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-[0.875rem] text-[var(--text-secondary)]">CPU peak %</span>
@@ -103,8 +109,6 @@ export function ResultCard({ run, onClose, compact, embedded }: ResultCardProps)
             </div>
           </div>
         </div>
-
-        
       </div>
     </div>
   );

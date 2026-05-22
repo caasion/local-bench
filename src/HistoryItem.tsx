@@ -1,16 +1,19 @@
-import type { MockBenchmarkRun } from "./mockData";
+import type { BenchmarkRunRecord } from "./types";
+import { computeScores } from "./utils";
 
 interface HistoryItemProps {
-  run: MockBenchmarkRun;
+  run: BenchmarkRunRecord;
   isActive: boolean;
   onClick: () => void;
   onDelete: (id: number) => void;
 }
 
 export function HistoryItem({ run, isActive, onClick, onDelete }: HistoryItemProps) {
+  const scores = computeScores(run);
   const totalScore = Math.round(
-    Object.values(run.scores).reduce((sum, s) => sum + s, 0) / Object.values(run.scores).length
+    Object.values(scores).reduce((sum, s) => sum + s, 0) / Object.values(scores).length
   );
+
   return (
     <div
       className={`group border rounded-[var(--radius-sm)] px-6 py-4 cursor-pointer transition-all duration-150 ${isActive ? 'bg-accent/20 hover:bg-accent/25 border-accent' : 'bg-white/10 hover:bg-white/15 border-border'}`}
