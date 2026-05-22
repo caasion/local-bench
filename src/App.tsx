@@ -2,7 +2,6 @@ import { useState } from "react";
 import "./App.css";
 import { HomePage } from "./HomePage";
 import { BenchmarkPage } from "./BenchmarkPage";
-import { PromptsPage } from "./PromptsPage";
 import { HistoryPage } from "./HistoryPage";
 import { ProfilesPage } from "./ProfilesPage";
 import { SettingsPage } from "./SettingsPage";
