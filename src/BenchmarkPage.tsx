@@ -2,6 +2,10 @@ import { useState } from "react";
 import { MOCK_MODELS, MOCK_PROFILES, MOCK_PROMPTS } from "./mockData";
 import { ActionCard } from "./ActionCard";
 import { CustomSelect } from "./CustomSelect";
+import { FaPlay, FaUser } from "react-icons/fa6";
+import { TbBoxModel } from "react-icons/tb";
+import { HiLightningBolt } from "react-icons/hi";
+import { IoDocumentText } from "react-icons/io5";
 
 export function BenchmarkPage() {
   const [selectedProfileId, setSelectedProfileId] = useState<number>(MOCK_PROFILES[0].id);
@@ -49,9 +53,10 @@ export function BenchmarkPage() {
         <div className="bg-[var(--bg-card)] rounded-sm overflow-hidden p-5">
           <div className="flex items-start justify-between mb-5">
             <div className="flex items-center gap-3">
-              <svg width="36" height="36" viewBox="0 0 36 36" fill="white" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 8a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM18 21c-6.667 0-10 3.333-10 5v2h20v-2c0-1.667-3.333-5-10-5z"/>
-              </svg>
+              <div className="flex text-[24px]">
+                <FaUser />
+              </div>
+              
               <div>
                 <div className="text-[1.125rem] font-semibold text-[var(--text-primary)]">Profile</div>
                 <div className="text-[0.8rem] text-[var(--text-secondary)] font-normal">Change benchmark profile.</div>
@@ -86,14 +91,11 @@ export function BenchmarkPage() {
         </div>
 
         {/* Models card */}
-        <div className="bg-[var(--bg-card)] rounded-[var(--radius-md)] overflow-hidden p-5">
-          <div className="flex items-center gap-3 mb-5">
-            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="white" strokeWidth="2" xmlns="http://www.w3.org/2000/svg">
-              <rect x="4" y="4" width="11" height="11" rx="2" />
-              <rect x="21" y="4" width="11" height="11" rx="2" />
-              <rect x="4" y="21" width="11" height="11" rx="2" />
-              <rect x="21" y="21" width="11" height="11" rx="2" />
-            </svg>
+        <div className="bg-[var(--bg-card)] rounded-[var(--radius-md)] overflow-hidden px-6 py-5">
+          <div className="flex items-center gap-4 mb-5">
+            <div className="text-[24px]">
+                <TbBoxModel />
+              </div>
             <div>
               <div className="text-[1.125rem] font-semibold text-[var(--text-primary)]">Models</div>
               <div className="text-[0.75rem] text-[var(--text-secondary)]">Select models to benchmark.</div>
@@ -140,7 +142,7 @@ export function BenchmarkPage() {
 
       <div className="flex flex-col gap-2 mb-6">
         <ActionCard
-          icon={<></>}
+          icon={<HiLightningBolt />}
           title="Benchmark Status"
           description="Last benchmarked: 2 hours ago"
           actions={
@@ -160,11 +162,7 @@ export function BenchmarkPage() {
 
         <ActionCard
           icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <path d="M14 2v6h6" />
-              <path d="M16 13H8m8 4H8m2-8H8" />
-            </svg>
+            <IoDocumentText />
           }
           title="Active Prompt"
           description="Currently active prompt that is being used for benchmarking"

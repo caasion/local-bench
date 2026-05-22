@@ -4,6 +4,8 @@ import type { MockBenchmarkRun } from "./mockData";
 import { ActionCard } from "./ActionCard";
 import { ModelResultItem } from "./ModelResultItem";
 import { CustomSelect } from "./CustomSelect";
+import { TbBoxModel } from "react-icons/tb";
+import { FaUser, FaPlay } from "react-icons/fa6";
 
 interface HomePageProps {
   onNavigate: (view: string) => void;
@@ -46,10 +48,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
       <div className="grid grid-cols-2 gap-4 mb-4">
         <ActionCard
           icon={
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 20c0-4 4-7 8-7s8 3 8 7" />
-            </svg>
+            <FaUser />
           }
           title="Profile"
           description="Change benchmark profile."
@@ -63,10 +62,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
         />
         <ActionCard
           icon={
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="4" y="4" width="16" height="16" rx="2" />
-              <path d="M9 9h6M9 13h6M9 17h4" />
-            </svg>
+            <TbBoxModel />
           }
           title="Models"
           description="Select a model to benchmark."
@@ -83,10 +79,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
       <div className="mb-7">
         <ActionCard
           icon={
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M3 3v18h18" />
-              <path d="M7 16l4-8 4 4 4-8" />
-            </svg>
+            <FaPlay />
           }
           title="Benchmark"
           description="Run a benchmark."
