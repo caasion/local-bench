@@ -114,6 +114,20 @@ export interface BenchmarkResult {
   per_prompt: PromptResult[];
 }
 
+export interface BenchmarkRunProgress {
+  current_model: string;
+  current_prompt: string;
+
+  likely_ram_spillover: boolean;
+  total_tokens: number;
+  ttft_ns_mean: number;
+  ttft_ns_std_dev: number;
+
+  vram_values_mb: number[];
+  cpu_values_percent: number[];
+  tokens_per_second_values: number[];
+}
+
 // database schemas
 export interface BenchmarkRunRecord {
   id: number;
