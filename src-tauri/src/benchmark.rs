@@ -1,12 +1,12 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use sysinfo::{System, ProcessesToUpdate, ProcessRefreshKind};
+use tauri::Emitter;
 use crate::database::{DbState, save_benchmark_result};
 use crate::metrics::get_gpu_vram;
 use crate::ollama::{get_all_running_models, generate};
 use crate::types::{
-    BenchmarkInput, BenchmarkResult, PromptResult,
-    GenerateRequest, GenerateOptions, GenerationResponse,
+    BenchmarkInput, BenchmarkResult, BenchmarkRunProgress, GenerateOptions, GenerateRequest, GenerationResponse, PromptResult
 };
 
 async fn check_ram_spillover(model: &String) -> Result<bool, String> {
@@ -33,7 +33,7 @@ fn calc_std_dev(values: &[f64]) -> f64 {
     variance.sqrt()
 }
 
-pub async fn run_benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
+pub async fn run_benchmark(app: tauri::AppHandle, input: BenchmarkInput) -> Result<BenchmarkResult, String> {
     let BenchmarkInput { model, num_ctx, prompts, times } = input;
 
     let vram_peak_mb = Arc::new(AtomicU64::new(
@@ -58,6 +58,17 @@ pub async fn run_benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, Str
             cpu_peak_clone.fetch_max((cpu * 100.0) as u64, Ordering::Relaxed);
             if let Ok(metrics) = get_gpu_vram() {
                 vram_peak_clone.fetch_max(metrics.vram_used_mb, Ordering::Relaxed);
+                app.emit("benchmark-progress", BenchmarkRunProgress {
+                    current_model: "llama3".to_string(),
+                    current_prompt: "Hello".to_string(),
+                    likely_ram_spillover: false,
+                    total_tokens: 200,
+                    ttft_ns_mean: 1000.0,
+                    ttft_ns_std_dev: 22000.0,
+                    vram_values_mb: vec![192, 298, 329, 392, 329],
+                    cpu_values_percent: vec![27.0, 48.0, 29.0, 18.0, 30.0],
+                    tokens_per_second_values: vec![1.2, 3.2, 4.3, 2.1]
+                }).map_err(|e| e.to_string())?;
             }
         }
     });
@@ -196,8 +207,8 @@ pub async fn run_benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, Str
 }
 
 #[tauri::command]
-pub async fn benchmark(state: tauri::State<'_, DbState>, input: BenchmarkInput) -> Result<BenchmarkResult, String> {
-    let result = run_benchmark(input).await?;
+pub async fn benchmark(app: tauri::AppHandle, state: tauri::State<'_, DbState>, input: BenchmarkInput) -> Result<BenchmarkResult, String> {
+    let result = run_benchmark(app, input).await?;
     {
         let conn = state.0.lock().map_err(|e| e.to_string())?;
         save_benchmark_result(&conn, &result).map_err(|e| e.to_string())?;
