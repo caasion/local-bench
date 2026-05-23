@@ -3,13 +3,13 @@ import type {
   BenchmarkInput,
   BenchmarkResult,
   BenchmarkRunRecord,
+  Model,
   Profile,
   Prompt,
-  TagsResponse,
 } from "./types";
 
 // --- Ollama ---
-export const getModels = (): Promise<TagsResponse> =>
+export const getModels = (): Promise<Model[]> =>
   invoke("get_models");
 
 // --- Benchmark ---

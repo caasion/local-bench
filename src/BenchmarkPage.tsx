@@ -20,12 +20,12 @@ export function BenchmarkPage() {
 
   useEffect(() => {
     Promise.all([getModels(), getAllProfiles(), getAllPrompts()])
-      .then(([tagsResp, profileData, promptData]) => {
-        setModels(tagsResp.models);
+      .then(([modelData, profileData, promptData]) => {
+        setModels(modelData);
         setProfiles(profileData);
         setPrompts(promptData);
         if (profileData.length > 0) setSelectedProfileId(profileData[0].id);
-        if (tagsResp.models.length > 0) setSelectedModels(new Set([tagsResp.models[0].name]));
+        if (modelData.length > 0) setSelectedModels(new Set([modelData[0].name]));
       })
       .catch((e) => setError(`Failed to load: ${e}`));
   }, []);

@@ -27,12 +27,12 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
   useEffect(() => {
     Promise.all([getModels(), getAllProfiles(), getBenchmarkHistory()])
-      .then(([tagsResp, profileData, historyData]) => {
-        setModels(tagsResp.models);
+      .then(([modelData, profileData, historyData]) => {
+        setModels(modelData);
         setProfiles(profileData);
         setHistory(historyData);
         if (profileData.length > 0) setSelectedProfileId(profileData[0].id);
-        if (tagsResp.models.length > 0) setSelectedModel(tagsResp.models[0].name);
+        if (modelData.length > 0) setSelectedModel(modelData[0].name);
       })
       .catch((e) => setError(`Failed to load: ${e}`));
   }, []);
