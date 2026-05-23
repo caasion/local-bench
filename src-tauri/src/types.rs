@@ -138,6 +138,23 @@ pub struct BenchmarkResult {
     pub per_prompt: Vec<PromptResult>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BenchmarkRunProgress {
+    pub current_model: String,
+    pub current_prompt: String,
+
+    // running values
+    pub likely_ram_spillover: bool,
+    pub total_tokens: i32,
+    pub ttft_ns_mean: f64,
+    pub ttft_ns_std_dev: f64,
+
+    // graphs
+    pub vram_values_mb: Vec<u64>,
+    pub cpu_values_percent: Vec<f32>,
+    pub tokens_per_second_values: Vec<f32>,
+}
+
 // database schemas
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BenchmarkRunRecord {
