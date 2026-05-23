@@ -54,34 +54,20 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
       {error && <div className="text-[var(--danger)] mb-4 text-[0.875rem]">{error}</div>}
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <ActionCard
-          icon={<FaUser />}
-          title="Profile"
-          description="Change benchmark profile."
-          actions={
-            <CustomSelect
-              options={profiles.map((p) => ({ label: p.name, value: String(p.id) }))}
-              value={String(selectedProfileId ?? "")}
-              onChange={(v) => setSelectedProfileId(Number(v))}
-            />
-          }
-        />
-        <ActionCard
-          icon={<TbBoxModel />}
-          title="Models"
-          description="Select a model to benchmark."
-          actions={
-            <CustomSelect
-              options={models.map((m) => ({ label: m.name, value: m.name }))}
-              value={selectedModel}
-              onChange={setSelectedModel}
-            />
-          }
-        />
-      </div>
+      <ActionCard
+        icon={<FaUser />}
+        title="Profile"
+        description="Change benchmark profile."
+        actions={
+          <CustomSelect
+            options={profiles.map((p) => ({ label: p.name, value: String(p.id) }))}
+            value={String(selectedProfileId ?? "")}
+            onChange={(v) => setSelectedProfileId(Number(v))}
+          />
+        }
+      />
 
-      <div className="mb-7">
+      <div className="mt-2 mb-7">
         <ActionCard
           icon={<FaPlay />}
           title="Benchmark"
