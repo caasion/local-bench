@@ -1,24 +1,7 @@
 import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import type { Profile } from "./types";
+import { getAllProfiles, createProfile, updateProfile, deleteProfile } from "./api";
 
-interface Profile {
-  id: number;
-  name: string;
-  description: string | null;
-  max_ttft_seconds: number | null;
-  min_context_window: number | null;
-  accuracy_weight: number | null;
-  use_case_tag: string;
-}
-
-const EMPTY_DRAFT: Omit<Profile, "id"> = {
-  name: "",
-  description: null,
-  max_ttft_seconds: null,
-  min_context_window: null,
-  accuracy_weight: null,
-  use_case_tag: "",
-};
 
 export function ProfilesManager() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -31,7 +14,7 @@ export function ProfilesManager() {
 
   const load = async () => {
     try {
-      const data = await invoke<Profile[]>("get_all_profiles");
+      const data = await getAllProfiles();
       setProfiles(data);
     } catch (e) {
       setError(`Failed to load profiles: ${e}`);
@@ -54,7 +37,7 @@ export function ProfilesManager() {
     if (!editDraft) return;
     setError("");
     try {
-      await invoke("update_profile", { profile: editDraft });
+      await updateProfile(editDraft);
       cancelEdit();
       await load();
     } catch (e) {
@@ -65,7 +48,7 @@ export function ProfilesManager() {
   const handleDelete = async (id: number) => {
     setError("");
     try {
-      await invoke("delete_profile", { id });
+      await deleteProfile(id);
       if (editingId === id) cancelEdit();
       await load();
     } catch (e) {
@@ -80,7 +63,7 @@ export function ProfilesManager() {
       return;
     }
     try {
-      await invoke("create_profile", { name: newName.trim(), useCaseTag: newUseCaseTag.trim() });
+      await createProfile(newName.trim(), newUseCaseTag.trim());
       setCreating(false);
       setNewName("");
       setNewUseCaseTag("");
@@ -94,9 +77,9 @@ export function ProfilesManager() {
     if (!editDraft) return;
     const numericFields: (keyof Profile)[] = ["max_ttft_seconds", "min_context_window", "accuracy_weight"];
     if (numericFields.includes(field)) {
-      setEditDraft({ ...editDraft, [field]: raw === "" ? null : Number(raw) });
+      setEditDraft({ ...editDraft, [field]: raw === "" ? undefined : Number(raw) });
     } else {
-      setEditDraft({ ...editDraft, [field]: raw === "" ? null : raw });
+      setEditDraft({ ...editDraft, [field]: raw === "" ? undefined : raw });
     }
   };
 

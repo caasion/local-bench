@@ -1,12 +1,12 @@
-import type { MockProfile } from "./mockData";
+import type { Profile } from "./types";
 
 interface ProfileCardProps {
-  profile: MockProfile;
-  onFieldChange: (updated: MockProfile) => void;
+  profile: Profile;
+  onFieldChange: (updated: Profile) => void;
 }
 
 export function ProfileCard({ profile, onFieldChange }: ProfileCardProps) {
-  const update = (patch: Partial<MockProfile>) => {
+  const update = (patch: Partial<Profile>) => {
     onFieldChange({ ...profile, ...patch });
   };
 
@@ -35,7 +35,7 @@ export function ProfileCard({ profile, onFieldChange }: ProfileCardProps) {
         <textarea
           className="form-input form-input--editable form-textarea"
           value={profile.description ?? ""}
-          onChange={(e) => update({ description: e.target.value || null })}
+          onChange={(e) => update({ description: e.target.value || undefined })}
           rows={3}
         />
       </div>
@@ -46,7 +46,7 @@ export function ProfileCard({ profile, onFieldChange }: ProfileCardProps) {
             className="form-input form-input--editable"
             type="number"
             value={profile.max_ttft_seconds ?? ""}
-            onChange={(e) => update({ max_ttft_seconds: e.target.value ? Number(e.target.value) : null })}
+            onChange={(e) => update({ max_ttft_seconds: e.target.value ? Number(e.target.value) : undefined })}
           />
         </div>
         <div className="form-row">
@@ -55,7 +55,7 @@ export function ProfileCard({ profile, onFieldChange }: ProfileCardProps) {
             className="form-input form-input--editable"
             type="number"
             value={profile.min_context_window ?? ""}
-            onChange={(e) => update({ min_context_window: e.target.value ? Number(e.target.value) : null })}
+            onChange={(e) => update({ min_context_window: e.target.value ? Number(e.target.value) : undefined })}
           />
         </div>
       </div>
@@ -66,7 +66,7 @@ export function ProfileCard({ profile, onFieldChange }: ProfileCardProps) {
           type="number"
           step="0.1"
           value={profile.accuracy_weight ?? ""}
-          onChange={(e) => update({ accuracy_weight: e.target.value ? Number(e.target.value) : null })}
+          onChange={(e) => update({ accuracy_weight: e.target.value ? Number(e.target.value) : undefined })}
         />
       </div>
     </div>

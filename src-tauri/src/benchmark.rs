@@ -1,24 +1,22 @@
-use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 use sysinfo::{System, ProcessesToUpdate, ProcessRefreshKind};
+use tauri::Emitter;
 use crate::database::{DbState, save_benchmark_result};
-use crate::metrics::get_gpu_vram;
+use crate::metrics::get_gpu_metrics;
 use crate::ollama::{get_all_running_models, generate};
 use crate::types::{
-    BenchmarkInput, BenchmarkResult, PromptResult,
-    GenerateRequest, GenerateOptions, GenerationResponse,
+    BenchmarkInput, BenchmarkResult, BenchmarkRunProgress, GenerateOptions, GenerateRequest, GenerationResponse, PromptResult
 };
 
-async fn check_ram_spillover(model: &String) -> Result<bool, String> {
+async fn check_ram_spillover(model: &str) -> Result<bool, String> {
     let current_model = get_all_running_models().await?
         .models
         .into_iter()
         .find(|m| m.name == *model)
         .ok_or_else(|| format!("Model '{}' not running", model))?;
 
-    let likely_ram_spillover = current_model.size - (current_model.size as f64 * 0.05) as u64 > current_model.size_vram;
-
-    Ok(likely_ram_spillover)
+    let threshold = current_model.size - (current_model.size as f64 * 0.05) as u64;
+    Ok(threshold > current_model.size_vram)
 }
 
 fn calc_mean(values: &[f64]) -> f64 {
@@ -33,45 +31,85 @@ fn calc_std_dev(values: &[f64]) -> f64 {
     variance.sqrt()
 }
 
-pub async fn run_benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, String> {
-    let BenchmarkInput { model, num_ctx, prompts, times } = input;
+/// Shared state between the poller task and the main benchmark loop
+struct HardwareSamples {
+    vram_mb: Vec<u64>,
+    cpu_percent: Vec<f32>,
+    gpu_percent: Vec<f32>,
+}
 
-    let vram_peak_mb = Arc::new(AtomicU64::new(
-        get_gpu_vram().map(|m| m.vram_used_mb).unwrap_or(0),
-    ));
-    let cpu_peak = Arc::new(AtomicU64::new(0));
-    let vram_peak_clone = Arc::clone(&vram_peak_mb);
-    let cpu_peak_clone = Arc::clone(&cpu_peak);
+pub async fn run_benchmark(app: tauri::AppHandle, input: BenchmarkInput) -> Result<BenchmarkResult, String> {
+    let BenchmarkInput { model, num_ctx, prompts, runs } = input;
+    let total_prompts = prompts.len() as u32;
+    let total_runs = runs;
+
+    // Shared hardware samples (poller writes, main loop reads for per-prompt slicing)
+    let samples = Arc::new(Mutex::new(HardwareSamples {
+        vram_mb: Vec::new(),
+        cpu_percent: Vec::new(),
+        gpu_percent: Vec::new(),
+    }));
+
+    // Progress state shared with poller for live emission
+    let progress = Arc::new(Mutex::new(BenchmarkRunProgress {
+        current_prompt_number: 1,
+        current_run_number: 0,
+        total_prompts,
+        total_runs,
+        vram_values_mb: Vec::new(),
+        cpu_values_percent: Vec::new(),
+        gpu_values_percent: Vec::new(),
+        tps_values: Vec::new(),
+        prompt_boundaries: Vec::new(),
+        likely_ram_spillover: false,
+        total_tokens: 0,
+    }));
+
+    let samples_clone = Arc::clone(&samples);
+    let progress_clone = Arc::clone(&progress);
+    let app_clone = app.clone();
+
+    // Hardware poller - samples every 200ms, emits progress to frontend
     let poller = tokio::spawn(async move {
         let mut sys = System::new();
-        // Initial refresh establishes a baseline so the first cpu_usage() delta is valid
         sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing().with_cpu());
+
         loop {
             tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
             sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing().with_cpu());
-            // Sum CPU usage across all ollama processes (main + any runner subprocesses)
+
+            // CPU: sum across all ollama processes
             let cpu: f32 = sys.processes()
                 .values()
                 .filter(|p| p.name().to_string_lossy().to_lowercase().contains("ollama"))
                 .map(|p| p.cpu_usage())
                 .sum();
-            cpu_peak_clone.fetch_max((cpu * 100.0) as u64, Ordering::Relaxed);
-            if let Ok(metrics) = get_gpu_vram() {
-                vram_peak_clone.fetch_max(metrics.vram_used_mb, Ordering::Relaxed);
+
+            // GPU + VRAM
+            let (vram_mb, gpu_util) = match get_gpu_metrics() {
+                Ok(m) => (m.vram_used_mb, m.gpu_utilization),
+                Err(_) => (0, 0.0),
+            };
+
+            // Store samples
+            {
+                let mut s = samples_clone.lock().unwrap();
+                s.vram_mb.push(vram_mb);
+                s.cpu_percent.push(cpu);
+                s.gpu_percent.push(gpu_util);
+            }
+
+            // Update and emit progress
+            {
+                let mut p = progress_clone.lock().unwrap();
+                p.vram_values_mb.push(vram_mb);
+                p.cpu_values_percent.push(cpu);
+                p.gpu_values_percent.push(gpu_util);
+
+                let _ = app_clone.emit("benchmark-progress", p.clone());
             }
         }
     });
-
-    // Accumulators for pooled TPS: sum(eval_tokens) / sum(eval_duration)
-    let mut eval_count_sum: u64 = 0;
-    let mut eval_duration_sum: u64 = 0;
-
-    // Per-run samples for mean/std-dev of TTFT, total time, and TPS
-    let mut ttft_samples: Vec<f64> = Vec::new();
-    let mut total_time_samples: Vec<f64> = Vec::new();
-    let mut tps_samples: Vec<f64> = Vec::new();
-
-    let mut per_prompt: Vec<PromptResult> = Vec::new();
 
     let gen_options = Some(GenerateOptions {
         logprobs: None,
@@ -80,7 +118,7 @@ pub async fn run_benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, Str
         extra: None,
     });
 
-    // Pull first generation out so the model is loaded before we check spillover
+    // Warm up: first generation loads the model, gives us load time
     let first_req = GenerateRequest {
         model: model.clone(),
         prompt: Some(prompts[0].clone()),
@@ -94,17 +132,44 @@ pub async fn run_benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, Str
         keep_alive: None,
         options: gen_options.clone(),
     };
-    let mut prefetched = Some(generate(first_req).await?);
+    let first_resp = generate(first_req).await?;
+    let model_load_time_ns = first_resp.load_duration.unwrap_or(0);
     let likely_ram_spillover = check_ram_spillover(&model).await.unwrap_or(false);
 
+    {
+        let mut p = progress.lock().unwrap();
+        p.likely_ram_spillover = likely_ram_spillover;
+    }
+
+    // Global accumulators
+    let mut all_tps: Vec<f64> = Vec::new();
+    let mut all_ttft: Vec<f64> = Vec::new();
+    let mut per_prompt_results: Vec<PromptResult> = Vec::new();
+
+    // Process first response as part of prompt 0, run 0
+    let mut prefetched: Option<GenerationResponse> = Some(first_resp);
+
     for (pi, prompt) in prompts.iter().enumerate() {
+        // Mark where this prompt starts in the hardware sample timeline
+        let prompt_start_idx = {
+            let s = samples.lock().unwrap();
+            s.vram_mb.len()
+        };
+
         let mut p_tps: Vec<f64> = Vec::new();
         let mut p_ttft: Vec<f64> = Vec::new();
-        let mut p_total_time: Vec<f64> = Vec::new();
+        let mut p_response_time: Vec<f64> = Vec::new();
         let mut p_tokens: u64 = 0;
 
-        for iter in 0..(times as i32) {
-            let resp = if pi == 0 && iter == 0 {
+        for run in 0..runs {
+            // Update progress
+            {
+                let mut p = progress.lock().unwrap();
+                p.current_prompt_number = (pi + 1) as u32;
+                p.current_run_number = run + 1;
+            }
+
+            let resp = if pi == 0 && run == 0 {
                 prefetched.take().unwrap()
             } else {
                 let req = GenerateRequest {
@@ -123,110 +188,121 @@ pub async fn run_benchmark(input: BenchmarkInput) -> Result<BenchmarkResult, Str
                 generate(req).await?
             };
 
-            let GenerationResponse {
-                total_duration,
-                load_duration,
-                prompt_eval_duration,
-                eval_count,
-                eval_duration,
-                ..
-            } = resp;
+            let eval_count = resp.eval_count.unwrap_or(0);
+            let eval_duration = resp.eval_duration.unwrap_or(1); // ns
+            let load_duration = resp.load_duration.unwrap_or(0);
+            let prompt_eval_duration = resp.prompt_eval_duration.unwrap_or(0);
+            let total_duration = resp.total_duration.unwrap_or(0);
 
-            let td = total_duration.unwrap_or(0);
-            let ld = load_duration.unwrap_or(0);
-            let ped = prompt_eval_duration.unwrap_or(0);
-            let ec = eval_count.unwrap_or(0);
-            let ed = eval_duration.unwrap_or(1);
-
-            eval_count_sum += ec;
-            eval_duration_sum += ed;
-            p_tokens += ec;
-
-            // tps = eval_tokens / (eval_duration_ns / 1e9) -- per run
-            let tps = if ed > 0 { (ec as f64) / (ed as f64 / 10e6) } else { 0.0 };
-            // ttft = load_duration + prompt_eval_duration (ns)
-            let ttft = (ld + ped) as f64;
-            let total_time = td as f64;
+            let tps = if eval_duration > 0 {
+                (eval_count as f64) / (eval_duration as f64 / 1e9)
+            } else {
+                0.0
+            };
+            let ttft = (load_duration + prompt_eval_duration) as f64;
+            let response_time = total_duration as f64;
 
             p_tps.push(tps);
             p_ttft.push(ttft);
-            p_total_time.push(total_time);
+            p_response_time.push(response_time);
+            p_tokens += eval_count;
 
-            tps_samples.push(tps);
-            ttft_samples.push(ttft);
-            total_time_samples.push(total_time);
+            all_tps.push(tps);
+            all_ttft.push(ttft);
+
+            // Update progress with TPS sample
+            {
+                let mut p = progress.lock().unwrap();
+                p.tps_values.push(tps);
+                p.total_tokens += eval_count;
+            }
         }
 
-        per_prompt.push(PromptResult {
+        // Slice hardware samples for this prompt
+        let (vram_peak, vram_avg, cpu_peak, cpu_avg, gpu_peak, gpu_avg) = {
+            let s = samples.lock().unwrap();
+            let prompt_end_idx = s.vram_mb.len();
+            let vram_slice = &s.vram_mb[prompt_start_idx..prompt_end_idx];
+            let cpu_slice = &s.cpu_percent[prompt_start_idx..prompt_end_idx];
+            let gpu_slice = &s.gpu_percent[prompt_start_idx..prompt_end_idx];
+
+            (
+                vram_slice.iter().copied().max().unwrap_or(0),
+                if vram_slice.is_empty() { 0.0 } else { vram_slice.iter().sum::<u64>() as f64 / vram_slice.len() as f64 },
+                cpu_slice.iter().copied().fold(0.0_f32, f32::max),
+                if cpu_slice.is_empty() { 0.0 } else { cpu_slice.iter().sum::<f32>() / cpu_slice.len() as f32 },
+                gpu_slice.iter().copied().fold(0.0_f32, f32::max),
+                if gpu_slice.is_empty() { 0.0 } else { gpu_slice.iter().sum::<f32>() / gpu_slice.len() as f32 },
+            )
+        };
+
+        // Record prompt boundary in progress
+        {
+            let mut p = progress.lock().unwrap();
+            let boundary = p.vram_values_mb.len() as u32;
+            p.prompt_boundaries.push(boundary);
+        }
+
+        per_prompt_results.push(PromptResult {
             prompt: prompt.clone(),
-            tokens_per_second_mean: calc_mean(&p_tps),
-            tokens_per_second_std_dev: calc_std_dev(&p_tps),
+            total_tokens: p_tokens,
+            tps_mean: calc_mean(&p_tps),
+            tps_std_dev: calc_std_dev(&p_tps),
             ttft_ns_mean: calc_mean(&p_ttft),
             ttft_ns_std_dev: calc_std_dev(&p_ttft),
-            total_time_ns_mean: calc_mean(&p_total_time),
-            total_time_ns_std_dev: calc_std_dev(&p_total_time),
-            total_tokens: p_tokens,
+            response_time_ns_mean: calc_mean(&p_response_time),
+            response_time_ns_std_dev: calc_std_dev(&p_response_time),
+            vram_peak_mb: vram_peak,
+            vram_avg_mb: vram_avg,
+            cpu_peak_percent: cpu_peak,
+            cpu_avg_percent: cpu_avg,
+            gpu_peak_percent: gpu_peak,
+            gpu_avg_percent: gpu_avg,
         });
     }
 
     poller.abort();
 
-    // Pooled TPS: sum(eval_tokens) / sum(eval_duration_ns / 1e9)
-    let tokens_per_second = if eval_duration_sum == 0 {
-        0.0
-    } else {
-        (eval_count_sum as f32) / (eval_duration_sum as f32 / 10e6)
+    // Benchmark-level hardware stats (all samples)
+    let (bm_vram_peak, bm_vram_avg, bm_cpu_peak, bm_cpu_avg, bm_gpu_peak, bm_gpu_avg) = {
+        let s = samples.lock().unwrap();
+        (
+            s.vram_mb.iter().copied().max().unwrap_or(0),
+            if s.vram_mb.is_empty() { 0.0 } else { s.vram_mb.iter().sum::<u64>() as f64 / s.vram_mb.len() as f64 },
+            s.cpu_percent.iter().copied().fold(0.0_f32, f32::max),
+            if s.cpu_percent.is_empty() { 0.0 } else { s.cpu_percent.iter().sum::<f32>() / s.cpu_percent.len() as f32 },
+            s.gpu_percent.iter().copied().fold(0.0_f32, f32::max),
+            if s.gpu_percent.is_empty() { 0.0 } else { s.gpu_percent.iter().sum::<f32>() / s.gpu_percent.len() as f32 },
+        )
     };
+
+    let tps = calc_mean(&all_tps);
+    let tps_std_dev = calc_std_dev(&all_tps);
 
     Ok(BenchmarkResult {
         model,
         likely_ram_spillover,
-        tokens_per_second,
-        tokens_per_second_mean: calc_mean(&tps_samples),
-        tokens_per_second_std_dev: calc_std_dev(&tps_samples),
-        total_tokens: eval_count_sum as i32,
-        vram_peak_mb: vram_peak_mb.load(Ordering::Relaxed),
-        cpu_peak_percent: cpu_peak.load(Ordering::Relaxed) as f32 / 100.0,
-        ttft_ns_mean: calc_mean(&ttft_samples),
-        ttft_ns_std_dev: calc_std_dev(&ttft_samples),
-        total_time_ns_mean: calc_mean(&total_time_samples),
-        total_time_ns_std_dev: calc_std_dev(&total_time_samples),
-        per_prompt,
+        model_load_time_ns,
+        tps,
+        tps_std_dev,
+        ttft_ns_mean: calc_mean(&all_ttft),
+        ttft_ns_std_dev: calc_std_dev(&all_ttft),
+        vram_peak_mb: bm_vram_peak,
+        vram_avg_mb: bm_vram_avg,
+        cpu_peak_percent: bm_cpu_peak,
+        cpu_avg_percent: bm_cpu_avg,
+        gpu_peak_percent: bm_gpu_peak,
+        gpu_avg_percent: bm_gpu_avg,
+        per_prompt: per_prompt_results,
     })
 }
 
 #[tauri::command]
-pub async fn benchmark(state: tauri::State<'_, DbState>, input: BenchmarkInput) -> Result<BenchmarkResult, String> {
-    let result = run_benchmark(input).await?;
+pub async fn benchmark(app: tauri::AppHandle, state: tauri::State<'_, DbState>, input: BenchmarkInput) -> Result<BenchmarkResult, String> {
+    let result = run_benchmark(app, input).await?;
     {
         let conn = state.0.lock().map_err(|e| e.to_string())?;
         save_benchmark_result(&conn, &result).map_err(|e| e.to_string())?;
     }
     Ok(result)
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::types::BenchmarkInput;
-    use super::run_benchmark;
-
-    #[tokio::test]
-    async fn test_benchmark() {
-        let model = "llama3.2:3b".to_string();
-        let prompts: Vec<String> = vec!["Hello. How are you?".to_string(), "Generate the fibonnaci sequence for me.".to_string()];
-        let times: i16 = 5;
-
-        let input = BenchmarkInput {
-            model: model.clone(),
-            num_ctx: 2048,
-            prompts,
-            times,
-        };
-
-        let result = run_benchmark(input).await;
-        match result {
-            Ok(result) => println!("{}: {} {} {}", model, result.tokens_per_second, result.ttft_ns_mean, result.total_time_ns_mean),
-            Err(e) => println!("Error: {}", e)
-        }
-    }
 }

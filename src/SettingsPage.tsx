@@ -1,11 +1,20 @@
-import { useState } from "react";
-import { MOCK_PROFILES } from "./mockData";
+import { useEffect, useState } from "react";
+import type { Profile } from "./types";
+import { getAllProfiles } from "./api";
 import { CustomSelect } from "./CustomSelect";
 
 export function SettingsPage() {
-  const [selectedProfile, setSelectedProfile] = useState<number>(MOCK_PROFILES[0].id);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [selectedProfile, setSelectedProfile] = useState<number | null>(null);
   const [iterations, setIterations] = useState("5");
   const [autoSave, setAutoSave] = useState(true);
+
+  useEffect(() => {
+    getAllProfiles().then((data) => {
+      setProfiles(data);
+      if (data.length > 0) setSelectedProfile(data[0].id);
+    });
+  }, []);
 
   return (
     <div className="page">
@@ -21,8 +30,8 @@ export function SettingsPage() {
             <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">Default Profile</span>
           </div>
           <CustomSelect
-            options={MOCK_PROFILES.map((p) => ({ label: p.name, value: String(p.id) }))}
-            value={String(selectedProfile)}
+            options={profiles.map((p) => ({ label: p.name, value: String(p.id) }))}
+            value={String(selectedProfile ?? "")}
             onChange={(v) => setSelectedProfile(Number(v))}
           />
         </div>

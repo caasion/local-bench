@@ -1,26 +1,9 @@
-import { useState } from "react";
-
-interface Prompt {
-  id: number;
-  use_case_tag: string;
-  content: string;
-}
+import { useEffect, useState } from "react";
+import { Prompt } from "./types";
+import { createPrompt, deletePrompt, getAllPrompts, updatePromptContent } from "./api";
 
 export function PromptsManager() {
-  const defaultPrompts: Prompt[] = [
-    { id: 1, use_case_tag: "coding", content: "Write a function that takes an array of integers and returns the two numbers that add up to a specific target. Explain your approach and time complexity." },
-    { id: 2, use_case_tag: "coding", content: "Refactor the following code to improve readability, performance, and error handling. Explain each change you made and why." },
-    { id: 3, use_case_tag: "reasoning", content: "A farmer needs to cross a river with a wolf, a goat, and a cabbage. The boat can only carry the farmer and one item at a time. If left alone, the wolf will eat the goat, and the goat will eat the cabbage. How can the farmer get everything across safely?" },
-    { id: 4, use_case_tag: "reasoning", content: "You have 12 identical-looking balls. One is a different weight (heavier or lighter). Using a balance scale exactly 3 times, identify the odd ball and determine if it's heavier or lighter." },
-    { id: 5, use_case_tag: "writing", content: "Write a concise product description for a new noise-cancelling headphone aimed at remote workers. The tone should be professional yet approachable, under 150 words." },
-    { id: 6, use_case_tag: "writing", content: "Summarize the following article in 3 bullet points, preserving the key arguments and any statistical claims." },
-    { id: 7, use_case_tag: "math", content: "Prove that the square root of 2 is irrational. Show each step clearly and explain the proof technique used." },
-    { id: 8, use_case_tag: "math", content: "A ball is thrown upward from ground level at 20 m/s. Ignoring air resistance, calculate the maximum height reached and the total time in the air." },
-    { id: 9, use_case_tag: "chat", content: "Explain quantum computing to a 10-year-old using simple analogies. Keep it under 100 words." },
-    { id: 10, use_case_tag: "chat", content: "I'm feeling overwhelmed with my workload. Can you help me create a prioritization framework to decide what to tackle first?" },
-  ];
-
-  const [prompts, setPrompts] = useState<Prompt[]>(defaultPrompts);
+  const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [filterTag, setFilterTag] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -29,6 +12,17 @@ export function PromptsManager() {
   const [newTag, setNewTag] = useState("");
   const [newContent, setNewContent] = useState("");
   const [error, setError] = useState("");
+
+  const load = async () => {
+    try {
+      const data = await getAllPrompts();
+      setPrompts(data);
+    } catch (e) {
+      setError(`Failed to load prompts: ${e}`)
+    }
+  }
+
+  useEffect(() => { load(); }, [])
 
   const uniqueTags = Array.from(new Set(prompts.map((p) => p.use_case_tag))).sort();
 
@@ -51,22 +45,29 @@ export function PromptsManager() {
 
   const saveEdit = (id: number) => {
     setPrompts((prev) => prev.map((p) => p.id === id ? { ...p, content: editContent } : p));
+    updatePromptContent(id, editContent);
     setEditingId(null);
   };
 
   const handleDelete = (id: number) => {
     setPrompts((prev) => prev.filter((p) => p.id !== id));
+    deletePrompt(id);
     if (editingId === id) cancelEdit();
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     setError("");
     if (!newTag.trim() || !newContent.trim()) {
       setError("Tag and content are required.");
       return;
     }
-    const nextId = prompts.length > 0 ? Math.max(...prompts.map((p) => p.id)) + 1 : 1;
-    setPrompts((prev) => [...prev, { id: nextId, use_case_tag: newTag.trim(), content: newContent.trim() }]);
+    let id: number;
+    try {
+      id = await createPrompt(newTag, newContent);
+    } catch (e) {
+      setError(`Failed to create prompt ${e}`)
+    }
+    setPrompts((prev) => [...prev, { id, use_case_tag: newTag.trim(), content: newContent.trim() }]);
     setCreating(false);
     setNewTag("");
     setNewContent("");

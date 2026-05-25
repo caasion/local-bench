@@ -96,16 +96,27 @@ pub struct GenerateOptions {
     pub extra: Option<Value>,
 }
 
+/// Result for a single prompt (aggregated across N runs)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PromptResult {
     pub prompt: String,
-    pub tokens_per_second_mean: f64,
-    pub tokens_per_second_std_dev: f64,
+    pub total_tokens: u64,
+    // Tokens per second
+    pub tps_mean: f64,
+    pub tps_std_dev: f64,
+    // Time to first token (nanoseconds)
     pub ttft_ns_mean: f64,
     pub ttft_ns_std_dev: f64,
-    pub total_time_ns_mean: f64,
-    pub total_time_ns_std_dev: f64,
-    pub total_tokens: u64,
+    // Total response time (nanoseconds)
+    pub response_time_ns_mean: f64,
+    pub response_time_ns_std_dev: f64,
+    // Hardware per-prompt
+    pub vram_peak_mb: u64,
+    pub vram_avg_mb: f64,
+    pub cpu_peak_percent: f32,
+    pub cpu_avg_percent: f32,
+    pub gpu_peak_percent: f32,
+    pub gpu_avg_percent: f32,
 }
 
 // benchmarking
@@ -115,27 +126,53 @@ pub struct BenchmarkInput {
     pub model: String,
     pub num_ctx: u32,
     pub prompts: Vec<String>,
-    pub times: i16,
+    pub runs: u32,
 }
 
+/// Final benchmark result for one model
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BenchmarkResult {
     pub model: String,
     pub likely_ram_spillover: bool,
-    /// Pooled throughput: sum(eval_tokens) / sum(eval_duration)
-    pub tokens_per_second: f32,
-    pub tokens_per_second_mean: f64,
-    pub tokens_per_second_std_dev: f64,
-    pub total_tokens: i32,
-    pub vram_peak_mb: u64,
-    pub cpu_peak_percent: f32,
-    /// Arithmetic mean of per-run TTFT (load_duration + prompt_eval_duration) in nanoseconds
+    /// Model load time in nanoseconds (first call only)
+    pub model_load_time_ns: u64,
+    // Tokens per second (pooled: sum tokens / sum eval time)
+    pub tps: f64,
+    pub tps_std_dev: f64,
+    // Time to first token (nanoseconds) - benchmark level mean
     pub ttft_ns_mean: f64,
     pub ttft_ns_std_dev: f64,
-    /// Arithmetic mean of per-run total_duration in nanoseconds
-    pub total_time_ns_mean: f64,
-    pub total_time_ns_std_dev: f64,
+    // Hardware - benchmark level
+    pub vram_peak_mb: u64,
+    pub vram_avg_mb: f64,
+    pub cpu_peak_percent: f32,
+    pub cpu_avg_percent: f32,
+    pub gpu_peak_percent: f32,
+    pub gpu_avg_percent: f32,
+    // Per-prompt breakdown
     pub per_prompt: Vec<PromptResult>,
+}
+
+/// Emitted to the frontend during a benchmark run for live updates
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BenchmarkRunProgress {
+    pub current_prompt_number: u32,
+    pub current_run_number: u32,
+    pub total_prompts: u32,
+    pub total_runs: u32,
+
+    // Time-series for live graphs
+    pub vram_values_mb: Vec<u64>,
+    pub cpu_values_percent: Vec<f32>,
+    pub gpu_values_percent: Vec<f32>,
+    pub tps_values: Vec<f64>,
+
+    // Markers: indices where a prompt boundary occurred
+    pub prompt_boundaries: Vec<u32>,
+
+    // Running values
+    pub likely_ram_spillover: bool,
+    pub total_tokens: u64,
 }
 
 // database schemas
@@ -144,14 +181,17 @@ pub struct BenchmarkRunRecord {
     pub id: i64,
     pub model_name: String,
     pub run_at: String,
-    pub tokens_per_second: f64,
-    pub total_tokens: i64,
-    pub vram_peak_mb: f64,
-    pub cpu_peak_percent: f64,
+    pub tps: f64,
+    pub tps_std_dev: f64,
     pub ttft_ns_mean: f64,
     pub ttft_ns_std_dev: f64,
-    pub total_time_ns_mean: f64,
-    pub total_time_ns_std_dev: f64,
+    pub model_load_time_ns: f64,
+    pub vram_peak_mb: f64,
+    pub vram_avg_mb: f64,
+    pub cpu_peak_percent: f64,
+    pub cpu_avg_percent: f64,
+    pub gpu_peak_percent: f64,
+    pub gpu_avg_percent: f64,
     pub likely_ram_spillover: bool,
 }
 
