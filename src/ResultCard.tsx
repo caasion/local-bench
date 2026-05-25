@@ -89,23 +89,27 @@ export function ResultCard({ run, model, profile, embedded }: ResultCardProps) {
           <div className="grid grid-cols-2 gap-x-8 gap-y-2">
             <div className="flex justify-between items-center">
               <span className="text-[0.875rem] text-[var(--text-secondary)]">Tokens per second</span>
-              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.tokens_per_second.toFixed(1)}/s</span>
+              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.tps.toFixed(1)}/s</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-[0.875rem] text-[var(--text-secondary)]">Time until first token</span>
               <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{formatTimeShort(run.ttft_ns_mean)}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[0.875rem] text-[var(--text-secondary)]">Total tokens</span>
-              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.total_tokens}</span>
+              <span className="text-[0.875rem] text-[var(--text-secondary)]">Model load time</span>
+              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{formatTimeShort(run.model_load_time_ns)}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[0.875rem] text-[var(--text-secondary)]">VRAM peak</span>
-              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.vram_peak_mb} MB</span>
+              <span className="text-[0.875rem] text-[var(--text-secondary)]">VRAM peak / avg</span>
+              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.vram_peak_mb} / {run.vram_avg_mb.toFixed(0)} MB</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-[0.875rem] text-[var(--text-secondary)]">CPU peak %</span>
-              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.cpu_peak_percent.toFixed(1)}%</span>
+              <span className="text-[0.875rem] text-[var(--text-secondary)]">GPU peak / avg</span>
+              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.gpu_peak_percent.toFixed(1)}% / {run.gpu_avg_percent.toFixed(1)}%</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[0.875rem] text-[var(--text-secondary)]">CPU peak / avg</span>
+              <span className="text-[0.875rem] font-medium text-[var(--text-primary)]">{run.cpu_peak_percent.toFixed(1)}% / {run.cpu_avg_percent.toFixed(1)}%</span>
             </div>
           </div>
         </div>
