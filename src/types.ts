@@ -76,15 +76,22 @@ export interface GenerateOptions {
   [key: string]: unknown;
 }
 
+/** Result for a single prompt (aggregated across N runs) */
 export interface PromptResult {
   prompt: string;
-  tokens_per_second_mean: number;
-  tokens_per_second_std_dev: number;
+  total_tokens: number;
+  tps_mean: number;
+  tps_std_dev: number;
   ttft_ns_mean: number;
   ttft_ns_std_dev: number;
-  total_time_ns_mean: number;
-  total_time_ns_std_dev: number;
-  total_tokens: number;
+  response_time_ns_mean: number;
+  response_time_ns_std_dev: number;
+  vram_peak_mb: number;
+  vram_avg_mb: number;
+  cpu_peak_percent: number;
+  cpu_avg_percent: number;
+  gpu_peak_percent: number;
+  gpu_avg_percent: number;
 }
 
 // benchmarking
@@ -92,40 +99,43 @@ export interface BenchmarkInput {
   model: string;
   num_ctx: number;
   prompts: string[];
-  times: number;
+  runs: number;
 }
 
+/** Final benchmark result for one model */
 export interface BenchmarkResult {
   model: string;
   likely_ram_spillover: boolean;
-  /** Pooled throughput: sum(eval_tokens) / sum(eval_duration) */
-  tokens_per_second: number;
-  tokens_per_second_mean: number;
-  tokens_per_second_std_dev: number;
-  total_tokens: number;
-  vram_peak_mb: number;
-  cpu_peak_percent: number;
-  /** Arithmetic mean of per-run TTFT (load_duration + prompt_eval_duration) in nanoseconds */
+  model_load_time_ns: number;
+  tps: number;
+  tps_std_dev: number;
   ttft_ns_mean: number;
   ttft_ns_std_dev: number;
-  /** Arithmetic mean of per-run total_duration in nanoseconds */
-  total_time_ns_mean: number;
-  total_time_ns_std_dev: number;
+  vram_peak_mb: number;
+  vram_avg_mb: number;
+  cpu_peak_percent: number;
+  cpu_avg_percent: number;
+  gpu_peak_percent: number;
+  gpu_avg_percent: number;
   per_prompt: PromptResult[];
 }
 
+/** Emitted during benchmark for live updates */
 export interface BenchmarkRunProgress {
-  current_model: string;
-  current_prompt: string;
-
-  likely_ram_spillover: boolean;
-  total_tokens: number;
-  ttft_ns_mean: number;
-  ttft_ns_std_dev: number;
-
+  current_prompt_number: number;
+  current_run_number: number;
+  total_prompts: number;
+  total_runs: number;
+  // Time-series for live graphs
   vram_values_mb: number[];
   cpu_values_percent: number[];
-  tokens_per_second_values: number[];
+  gpu_values_percent: number[];
+  tps_values: number[];
+  // Indices where prompt boundaries occurred
+  prompt_boundaries: number[];
+  // Running values
+  likely_ram_spillover: boolean;
+  total_tokens: number;
 }
 
 // database schemas
@@ -133,14 +143,17 @@ export interface BenchmarkRunRecord {
   id: number;
   model_name: string;
   run_at: string;
-  tokens_per_second: number;
-  total_tokens: number;
-  vram_peak_mb: number;
-  cpu_peak_percent: number;
+  tps: number;
+  tps_std_dev: number;
   ttft_ns_mean: number;
   ttft_ns_std_dev: number;
-  total_time_ns_mean: number;
-  total_time_ns_std_dev: number;
+  model_load_time_ns: number;
+  vram_peak_mb: number;
+  vram_avg_mb: number;
+  cpu_peak_percent: number;
+  cpu_avg_percent: number;
+  gpu_peak_percent: number;
+  gpu_avg_percent: number;
   likely_ram_spillover: boolean;
 }
 
