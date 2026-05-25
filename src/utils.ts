@@ -47,7 +47,7 @@ export function computeScores(run: BenchmarkRunRecord): Scores {
   const ttft = Math.max(0, Math.min(100, Math.round(100 - (ttftMs - 100) / 19)));
 
   // Throughput: 80 tok/s = 100pts, 0 tok/s = 0pts (linear)
-  const throughput = Math.max(0, Math.min(100, Math.round((run.tokens_per_second / 80) * 100)));
+  const throughput = Math.max(0, Math.min(100, Math.round((run.tps / 80) * 100)));
 
   // VRAM: <4GB = 100pts, 16GB+ = 0pts (linear)
   const vramGB = run.vram_peak_mb / 1024;
